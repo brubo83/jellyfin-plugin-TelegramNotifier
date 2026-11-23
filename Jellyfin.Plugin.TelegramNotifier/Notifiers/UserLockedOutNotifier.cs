@@ -21,6 +21,6 @@ public class UserLockedOutNotifier : IEventConsumer<UserLockedOutEventArgs>
             throw new ArgumentNullException(nameof(eventArgs));
         }
 
-        await _notificationFilter.Filter(NotificationFilter.NotificationType.UserLockedOut, eventArgs).ConfigureAwait(false);
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.UserLockedOut, eventArgs, userIds: eventArgs.Argument is null ? null : new[] { NotificationFilter.NormalizeUserId(eventArgs.Argument.Id) }).ConfigureAwait(false);
     }
 }

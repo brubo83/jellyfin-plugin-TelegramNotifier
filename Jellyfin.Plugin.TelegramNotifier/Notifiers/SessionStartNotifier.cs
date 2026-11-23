@@ -42,9 +42,9 @@ public class SessionStartNotifier : IEventConsumer<SessionStartedEventArgs>
         // Update the cache with the latest event time
         _recentEvents[sessionKey] = DateTime.UtcNow;
 
-        string userId = eventArgs.Argument.UserId.ToString();
+        string[] userIds = { NotificationFilter.NormalizeUserId(eventArgs.Argument.UserId) };
 
-        await _notificationFilter.Filter(NotificationFilter.NotificationType.SessionStart, eventArgs, userId).ConfigureAwait(false);
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.SessionStart, eventArgs, userIds: userIds).ConfigureAwait(false);
     }
 
     private static void CleanupOldEntries()

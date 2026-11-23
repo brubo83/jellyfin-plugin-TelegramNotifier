@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.TelegramNotifier.Configuration;
-using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Logging;
 
@@ -11,16 +12,19 @@ namespace Jellyfin.Plugin.TelegramNotifier
     public class NotificationFilter
     {
         private readonly Sender _sender;
+        private readonly ImageProvider _imageProvider;
         private readonly ILogger<Plugin> _logger;
         private readonly ILibraryManager _libraryManager;
         private readonly IMediaSourceManager _mediaSourceManager;
 
         public NotificationFilter(
             Sender sender,
+            ImageProvider imageProvider,
             ILibraryManager libraryManager,
             IMediaSourceManager mediaSourceManager)
         {
             _sender = sender;
+            _imageProvider = imageProvider;
             _libraryManager = libraryManager;
             _mediaSourceManager = mediaSourceManager;
             _logger = Plugin.Logger;
@@ -49,169 +53,99 @@ namespace Jellyfin.Plugin.TelegramNotifier
             UserDeleted,
             UserLockedOut,
             UserPasswordChanged,
-            UserUpdated,
-            UserDataSaved
+            UserUpdated
         }
 
-        private bool GetPropertyValue(UserConfiguration user, string propertyName)
-        {
-            var property = user.GetType().GetProperty(propertyName);
-            if (property != null)
-            {
-                var value = property.GetValue(user);
-                if (value != null)
-                {
-                    return (bool)value;
-                }
-                else
-                {
-                    throw new ArgumentException($"The property {propertyName} is null.");
-                }
-            }
-            else
-            {
-                throw new ArgumentException($"The property {propertyName} does not exist.");
-            }
-        }
+        public static string NormalizeUserId(string? userId) =>
+            (userId ?? string.Empty).Replace("-", string.Empty, StringComparison.Ordinal).Trim().ToLowerInvariant();
 
-        private string GetPropertyMessage(UserConfiguration user, string propertyName)
-        {
-            var property_message = user.GetType().GetProperty(propertyName + "StringMessage");
-            if (property_message != null)
-            {
-                var message = property_message.GetValue(user);
-                if (message != null)
-                {
-                    return (string)message;
-                }
-                else
-                {
-                    throw new ArgumentException($"The property {propertyName + "StringMessage"} is null.");
-                }
-            }
-            else
-            {
-                throw new ArgumentException($"The property {propertyName + "StringMessage"} does not exist.");
-            }
-        }
+        public static string NormalizeUserId(Guid userId) => userId.ToString("N");
 
-        public async Task Filter(NotificationType type, dynamic eventArgs, string userId = "", string imagePath = "", string subtype = "")
+        /// <summary>
+        /// Checks the matrix and sends at most one message to the configured chat.
+        /// </summary>
+        /// <param name="type">Notification family.</param>
+        /// <param name="eventArgs">Event data used by the message placeholders.</param>
+        /// <param name="userIds">Jellyfin users that caused the event (for user notifications).</param>
+        /// <param name="imageItem">Item whose poster is attached, or null for a text-only message.</param>
+        /// <param name="subtype">Specific key (e.g. PlaybackStartMovies) when the family has subtypes.</param>
+        public async Task Filter(
+            NotificationType type,
+            object eventArgs,
+            IEnumerable<string>? userIds = null,
+            BaseItem? imageItem = null,
+            string subtype = "")
         {
-            if (!Plugin.Config.EnablePlugin)
+            var config = Plugin.Config;
+            if (!config.EnablePlugin)
             {
                 return;
             }
 
-            UserConfiguration[] users = Plugin.Config.UserConfigurations;
-            var tasks = new List<Task>();
-
-            foreach (UserConfiguration user in users)
+            string key = string.IsNullOrEmpty(subtype) ? type.ToString() : subtype;
+            NotificationDefinition? definition = NotificationCatalog.Find(key);
+            if (definition is null)
             {
-                if (user.EnableUser == false)
-                {
-                    continue;
-                }
-
-                bool isNotificationTypeEnabled = GetPropertyValue(user, type.ToString());
-                if (!isNotificationTypeEnabled)
-                {
-                    continue;
-                }
-
-                if (user.DoNotMentionOwnActivities == true && user.UserId is not null)
-                {
-                    string currentUserid = user.UserId.Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
-                    string notifUserId = userId.Replace("-", string.Empty, StringComparison.OrdinalIgnoreCase);
-                    if (currentUserid == notifUserId)
-                    {
-                        continue;
-                    }
-                }
-
-                string message;
-
-                if (!string.IsNullOrEmpty(subtype))
-                {
-                    bool isSubTypeEnabled = GetPropertyValue(user, subtype);
-                    if (!isSubTypeEnabled)
-                    {
-                        continue;
-                    }
-
-                    message = GetPropertyMessage(user, subtype);
-                }
-                else
-                {
-                    message = GetPropertyMessage(user, type.ToString());
-                }
-
-                message = MessageParser.ParseMessage(message, eventArgs, _libraryManager, _mediaSourceManager);
-
-                string botToken = user.BotToken;
-                string chatId = user.ChatId;
-                bool isSilentNotification = user.SilentNotification;
-                string threadId = user.ThreadId;
-
-                /* ---------- Avoid duplicated notifications ---------- */
-                string fingerprint = $"{type}|{chatId}|{message}";
-
-                if (!NotificationDeduplicator.ShouldSend(fingerprint))
-                {
-                    _logger.LogInformation(
-                        "Duplicate notification skipped ({NotificationType}|{ChatId}|{Message})", type, chatId, message);
-                    continue;
-                }
-
-                try
-                {
-                    if (string.IsNullOrEmpty(imagePath))
-                    {
-                        Task task = _sender.SendMessage(type.ToString(), message, botToken, chatId, isSilentNotification, threadId);
-                        tasks.Add(task);
-                    }
-                    else
-                    {
-                        Episode episode = null;
-
-                        // Case 1 : eventArgs is an Episode
-                        if (eventArgs is Episode ep)
-                        {
-                            episode = ep;
-                        }
-                        // Case 2 : eventArgs contains Item
-                        else
-                        {
-                            try
-                            {
-                                if (eventArgs?.Item is Episode ep2)
-                                {
-                                    episode = ep2;
-                                }
-                            }
-                            catch
-                            {
-                                // Ignore if not item property
-                            }
-                        }
-
-                        if (user.KeepSerieImage && episode != null)
-                        {
-
-                            string serverUrl = Plugin.Instance?.Configuration.ServerUrl ?? "localhost:8096";
-                            imagePath = "http://" + serverUrl + "/Items/" + episode.Series.Id + "/Images/Primary";
-                        }
-
-                        Task task = _sender.SendMessageWithPhoto(type.ToString(), message, imagePath, botToken, chatId, isSilentNotification, threadId);
-                        tasks.Add(task);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "An error occurred while sending a message");
-                }
+                _logger.LogDebug("Unknown notification key {Key}", key);
+                return;
             }
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            NotificationRule? rule = config.Rules?.FirstOrDefault(r => string.Equals(r.Key, key, StringComparison.Ordinal));
+            if (rule is null || !IsEnabled(definition, rule, userIds))
+            {
+                return;
+            }
+
+            string template = string.IsNullOrWhiteSpace(rule.Message) ? definition.DefaultMessage : rule.Message;
+            string message = MessageParser.ParseMessage(template, eventArgs, _libraryManager, _mediaSourceManager);
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            // A single chat receives everything: never post the same message twice in a row.
+            if (!NotificationDeduplicator.ShouldSend($"{key}|{message}"))
+            {
+                _logger.LogInformation("Duplicate notification skipped ({Key})", key);
+                return;
+            }
+
+            var target = TelegramTarget.FromConfig();
+            try
+            {
+                if (imageItem is null)
+                {
+                    await _sender.SendMessage(key, message, target).ConfigureAwait(false);
+                    return;
+                }
+
+                ImagePayload? image = await _imageProvider
+                    .GetPrimaryImageAsync(ImageProvider.ResolveImageItem(imageItem))
+                    .ConfigureAwait(false);
+                await _sender.SendMessageWithPhoto(key, message, image, target).ConfigureAwait(false);
+            }
+#pragma warning disable CA1031 // A failing notification must never break Jellyfin event handling.
+            catch (Exception ex)
+#pragma warning restore CA1031
+            {
+                _logger.LogError(ex, "An error occurred while sending notification {Key}", key);
+            }
+        }
+
+        private static bool IsEnabled(NotificationDefinition definition, NotificationRule rule, IEnumerable<string>? userIds)
+        {
+            if (definition.Scope == NotificationScope.Server)
+            {
+                return rule.Enabled;
+            }
+
+            if (userIds is null || rule.UserIds is null || rule.UserIds.Length == 0)
+            {
+                return false;
+            }
+
+            var enabled = new HashSet<string>(rule.UserIds.Select(NormalizeUserId));
+            return userIds.Select(NormalizeUserId).Any(enabled.Contains);
         }
     }
 }

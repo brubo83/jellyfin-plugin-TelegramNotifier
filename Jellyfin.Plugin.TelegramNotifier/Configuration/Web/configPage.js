@@ -1,349 +1,293 @@
 export default function (view) {
+    const pluginUniqueId = 'fd76211d-17e0-4a72-a23f-c6eeb1e48b3a';
+    const $ = (sel) => view.querySelector(sel);
 
-    const TelegramNotifierConfig = {
-        pluginUniqueId: 'fd76211d-17e0-4a72-a23f-c6eeb1e48b3a',
-
-        notificationType: {
-            values: {
-                "ItemAdded": ["Item Added", "Movies", "Series", "Seasons", "Episodes", "Albums", "Songs", "Books"],
-                "ItemDeleted": ["Item Deleted", "Movies", "Series", "Seasons", "Episodes", "Albums", "Songs", "Books"],
-                "PlaybackStart": ["Playback Start", "Movies", "Episodes"],
-                "PlaybackProgress": ["Playback Progress (recommended: disabled)", "Movies", "Episodes"],
-                "PlaybackStop": ["Playback Stop", "Movies", "Episodes"],
-                "SubtitleDownloadFailure": "Subtitle Download Failure",
-                "AuthenticationFailure": "Authentication Failure",
-                "AuthenticationSuccess": "Authentication Success",
-                "SessionStart": "Session Start",
-                "PendingRestart": "Pending Restart",
-                "TaskCompleted": "Task Completed",
-                "PluginInstallationCancelled": "Plugin Installation Cancelled",
-                "PluginInstallationFailed": "Plugin Installation Failed",
-                "PluginInstalled": "Plugin Installed",
-                "PluginInstalling": "Plugin Installing",
-                "PluginUninstalled": "Plugin Uninstalled",
-                "PluginUpdated": "Plugin Updated",
-                "UserCreated": "User Created",
-                "UserDeleted": "User Deleted",
-                "UserLockedOut": "User Locked Out",
-                "UserPasswordChanged": "User Password Changed",
-                "UserUpdated": "User Updated",
-                "UserDataSaved": "User Data Saved"
-            },
-
-            defaultMessages: {
-                "ItemAddedMovies": "🎬 {item.Name} ({item.ProductionYear})\n      added to library\n\n📽 {item.Overview}",
-                "ItemAddedSeries": "📺 [Serie] {serie.Name} ({item.ProductionYear}) added to library\n\n📽 {item.Overview}",
-                "ItemAddedSeasons": "📺 {season.Series.Name} ({item.ProductionYear})\n      Season {seasonNumber} added to library\n\n📽 {item.Overview}",
-                "ItemAddedEpisodes": "📺 {episode.Series.Name} ({item.ProductionYear})\n      S{eSeasonNumber} - E{episodeNumber}\n      '{item.Name}' added to library\n\n📽 {item.Overview}",
-                "ItemAddedAlbums": "🎵 [Album] {album.Name} ({item.ProductionYear}) added to library",
-                "ItemAddedSongs": "🎵 [Audio] {audio.Name} ({item.ProductionYear}) added to library",
-                "ItemAddedBooks": "📖 [Book] {item.name} added to library\n\n🖋️ {item.Overview}",
-                "ItemDeletedMovies": "🗑️🎬 {item.Name} ({item.ProductionYear})\n      removed from library\n\n📽 {item.Overview}",
-                "ItemDeletedSeries": "🗑️📺 [Serie] {serie.Name} ({item.ProductionYear}) removed from library\n\n📽 {item.Overview}",
-                "ItemDeletedSeasons": "🗑️📺 {season.Series.Name} ({item.ProductionYear})\n      Season {seasonNumber} removed from library\n\n📽 {item.Overview}",
-                "ItemDeletedEpisodes": "🗑️📺 {episode.Series.Name} ({item.ProductionYear})\n      S{eSeasonNumber} - E{episodeNumber}\n      '{item.Name}' removed from library\n\n📽 {item.Overview}",
-                "ItemDeletedAlbums": "🗑️🎵 [Album] {album.Name} ({item.ProductionYear}) removed from library",
-                "ItemDeletedSongs": "🗑️🎵 [Audio] {audio.Name} ({item.ProductionYear}) removed from library",
-                "ItemDeletedBooks": "🗑️📖 [Book] {item.name} removed from library\n\n🖋️ {item.Overview}",
-                "AuthenticationFailure": "🔒 Authentication failure on {eventArgs.Argument.DeviceName} for user {eventArgs.Argument.Username}",
-                "AuthenticationSuccess": "🔓 Authentication success for user {eventArgs.Argument.User.Name} on {eventArgs.Argument.SessionInfo.DeviceName}",
-                "PendingRestart": "🔄 Jellyfin is pending a restart.",
-                "PlaybackProgressMovies": "👤 {eventArgs.Users[0].Username} is still watching on {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})",
-                "PlaybackProgressEpisodes": "👤 {eventArgs.Users[0].Username} is still watching on {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'",
-                "PlaybackStartMovies": "👤 {eventArgs.Users[0].Username} is watching on {eventArgs.DeviceName} ({eventArgs.Session.PlayState.PlayMethod}):\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})\n📺 [{eventArgs.Item.MediaType}] {eventArgs.Item.Genres}\n🕒 {duration}\n📽 {eventArgs.Item.Overview}",
-                "PlaybackStartEpisodes": "👤 {eventArgs.Users[0].Username} is watching on {eventArgs.DeviceName} ({eventArgs.Session.PlayState.PlayMethod}):\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'\n📺 [{eventArgs.Item.MediaType}] {eventArgs.Item.Series.Genres}\n🕒 {duration}\n📽 {eventArgs.Item.Overview}",
-                "PlaybackStopMovies": "👤 {eventArgs.Users[0].Username} stopped watching:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})",
-                "PlaybackStopEpisodes": "👤 {eventArgs.Users[0].Username} stopped watching:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'",
-                "PluginInstallationCancelled": "🔴 {eventArgs.Argument.Name} plugin installation cancelled (version {eventArgs.Argument.Version}):",
-                "PluginInstallationFailed": "🔴 {eventArgs.InstallationInfo} plugin installation failed (version {eventArgs.VersionInfo}):\n{eventArgs.Exception}",
-                "PluginInstalled": "🚧 {eventArgs.Argument.Name} plugin installed (version {eventArgs.Argument.Version})\n\nYou may need to restart your server.",
-                "PluginInstalling": "🚧 {eventArgs.Argument.Name} plugin is installing (version {eventArgs.Argument.Version})",
-                "PluginUninstalled": "🚧 {eventArgs.Argument.Name} plugin uninstalled",
-                "PluginUpdated": "🚧 {eventArgs.Argument.Name} plugin updated to version {eventArgs.Argument.Version}:🗒️ {eventArgs.Argument.Changelog}\n\nYou may need to restart Jellyfin to apply the changes.",
-                "SessionStart": "👤 {eventArgs.Argument.UserName} has started a session on:\n💻 {eventArgs.Argument.Client} ({eventArgs.Argument.DeviceName})\n",
-                "SubtitleDownloadFailure": "🚫 Subtitle download failed for {eventArgs.Item.Name}",
-                "TaskCompleted": "🧰 Task {eventArgs.Task.Name} completed: {eventArgs.Task.CurrentProgress}%\n🗒️ ({eventArgs.Task.Category}) {eventArgs.Task.Description}",
-                "UserCreated": "👤 User {eventArgs.Argument.Username} created.",
-                "UserDeleted": "🗑️ User {eventArgs.Argument.Username} deleted.",
-                "UserLockedOut": "👤🔒 User {eventArgs.Argument.Username} locked out",
-                "UserPasswordChanged": "👤 User {eventArgs.Argument.Username} changed his password.",
-                "UserUpdated": "👤 User {eventArgs.Argument.Username} has been updated",
-                "UserDataSaved": "👤 User {eventArgs.Argument.Username} data saved."
-            },
-
-            loadNotificationTypes: function (userConfig) {
-                const temp = document.querySelector("#template-notification-type");
-                const temp_without_textarea = document.querySelector("#template-notification-type-without-textarea");
-                const subtemp = document.querySelector("#template-notification-subtype");
-                const container = document.querySelector("[data-name=notificationTypeContainer]");
-                container.innerHTML = '';
-
-                const notificationTypeKeys = Object.keys(TelegramNotifierConfig.notificationType.values).sort();
-                for (const key of notificationTypeKeys) {
-                    let template = temp.cloneNode(true).content;
-                    if (typeof TelegramNotifierConfig.notificationType.values[key] !== 'string') {
-                        template = temp_without_textarea.cloneNode(true).content;
-                    }
-                    const name = template.querySelector("[data-name=notificationTypeName]");
-                    const value = template.querySelector("[data-name=notificationTypeValue]");
-
-                    if (typeof TelegramNotifierConfig.notificationType.values[key] !== 'string') {
-                        name.innerText = TelegramNotifierConfig.notificationType.values[key][0];
-                    } else {
-                        name.innerText = TelegramNotifierConfig.notificationType.values[key];
-                        const textarea = template.querySelector('[data-name="txtTemplate"]');
-                        textarea.value = userConfig === null ? this.defaultMessages[key] : userConfig[key + 'StringMessage'];
-                        textarea.dataset.value = key;
-                    }
-                    value.dataset.value = key;
-                    if (userConfig === null) {
-                        value.checked = false;
-                    } else {
-                        value.checked = userConfig[key] === true;
-                    }
-                    container.appendChild(template);
-
-                    // Notification subtypes
-                    if (typeof TelegramNotifierConfig.notificationType.values[key] !== 'string') {
-                        for (const subtype of TelegramNotifierConfig.notificationType.values[key].slice(1)) {
-                            template = subtemp.cloneNode(true).content;
-                            const name = template.querySelector("[data-name=notificationSubtypeName]");
-                            const value = template.querySelector("[data-name=notificationSubtypeValue]");
-                            const textarea = template.querySelector('[data-name="txtTemplate"]');
-
-                            name.innerText = subtype;
-                            const subkey = key + subtype.replace(/\s/g, '');
-                            value.dataset.value = subkey;
-                            textarea.dataset.value = subkey;
-                            if (userConfig === null) {
-                                value.checked = false;
-                                textarea.value = this.defaultMessages[subkey];
-                            } else {
-                                value.checked = userConfig[subkey] === true;
-                                textarea.value = userConfig[subkey + 'StringMessage'];
-                            }
-                            container.appendChild(template);
-                        }
-                    }
-                }
-            },
-
-            saveNotificationTypes: function (userConfig) {
-                const notificationTypeKeys = Object.keys(TelegramNotifierConfig.notificationType.values).sort();
-                for (const key of notificationTypeKeys) {
-                    userConfig[key] = document.querySelector(`[data-name=notificationTypeValue][data-value=${key}]`).checked;
-                    if (typeof TelegramNotifierConfig.notificationType.values[key] === 'string') {
-                        userConfig[key + 'StringMessage'] = document.querySelector(`[data-name=txtTemplate][data-value=${key}]`).value;
-                    }
-
-                    // Notification subtypes
-                    if (typeof TelegramNotifierConfig.notificationType.values[key] !== 'string') {
-                        for (const subtype of TelegramNotifierConfig.notificationType.values[key].slice(1)) {
-                            const subkey = key + subtype.replace(/\s/g, '');
-                            userConfig[subkey] = document.querySelector(`[data-name=notificationSubtypeValue][data-value=${subkey}]`).checked;
-                            userConfig[subkey + 'StringMessage'] = document.querySelector(`[data-name=txtTemplate][data-value=${subkey}]`).value;
-                        }
-                    }
-                }
-            }
-        },
-
-        user: {
-            loadUsers: async function () {
-                const users = await window.ApiClient.getUsers();
-                const selectElement = document.getElementById("userToConfigure");
-                selectElement.innerHTML = '';
-                for (const user of users) {
-                    const option = document.createElement('option');
-                    option.value = user.Id;
-                    option.textContent = user.Name;
-                    selectElement.appendChild(option);
-                }
-            },
-            getSelectedUserId: function () {
-                const userId = document.getElementById("userToConfigure").value;
-                return userId;
-            }
-        },
-
-        init: async function () {
-            await this.user.loadUsers();
-            this.loadConfig();
-
-            document.getElementById('userToConfigure').addEventListener('change', this.loadConfig);
-            document.getElementById('testButton').addEventListener('click', this.testBotConfig);
-            document.getElementById('saveButton').addEventListener('click', this.saveConfig);
-
-            document.body.addEventListener('click', function (event) {
-                const button = event.target.closest('.edit-template-button');
-
-                if (button) {
-                    event.preventDefault();
-                    const container = button.closest('div');
-                    const resetButton = container.querySelector('.reset-template-button');
-                    const textarea = container.querySelector('textarea[data-name="txtTemplate"]');
-
-                    if (resetButton && textarea) {
-                        resetButton.style.display = resetButton.style.display === 'none' ? 'block' : 'none';
-                        textarea.style.display = textarea.style.display === 'none' ? 'block' : 'none';
-                    }
-                }
-            });
-
-            document.body.addEventListener('click', function (event) {
-                const button = event.target.closest('.reset-template-button');
-
-                if (button) {
-                    event.preventDefault();
-                    const container = button.closest('div');
-                    const textarea = container.querySelector('textarea[data-name="txtTemplate"]');
-                    const key = textarea.dataset.value;
-
-                    if (textarea) {
-                        textarea.value = TelegramNotifierConfig.notificationType.defaultMessages[key];
-                    }
-                }
-            });
-
-        },
-
-        loadConfig: function () {
-            Dashboard.showLoadingMsg();
-            ApiClient.getPluginConfiguration(TelegramNotifierConfig.pluginUniqueId).then(function (config) {
-                document.querySelector('#EnablePlugin').checked = config.EnablePlugin;
-                const userConfig = config.UserConfigurations.find(x => x.UserId === TelegramNotifierConfig.user.getSelectedUserId());
-                if (userConfig) {
-                    document.querySelector('#ServerUrl').value = config.ServerUrl;
-                    document.querySelector('#ServerDisplayUrl').value = config.ServerDisplayUrl || '';
-                    document.querySelector('#ProxyEnabled').checked = config.ProxyEnabled;
-                    document.querySelector('#ProxyHost').value = config.ProxyHost || '';
-                    document.querySelector('#ProxyPort').value = config.ProxyPort || '';
-                    document.querySelector('#ProxyUsername').value = config.ProxyUsername || '';
-                    document.querySelector('#ProxyPassword').value = config.ProxyPassword || '';
-                    document.querySelector('#BotToken').value = userConfig.BotToken;
-                    document.querySelector('#ChatId').value = userConfig.ChatId;
-                    document.querySelector('#ThreadId').value = userConfig.ThreadId;
-                    document.querySelector('#EnableUser').checked = userConfig.EnableUser;
-                    document.querySelector('#SilentNotification').checked = userConfig.SilentNotification;
-                    document.querySelector('#DoNotMentionOwnActivities').checked = userConfig.DoNotMentionOwnActivities;
-                    document.querySelector('#KeepSerieImage').checked = userConfig.KeepSerieImage;
-                    TelegramNotifierConfig.notificationType.loadNotificationTypes(userConfig);
-                } else {
-                    document.querySelector('#ServerUrl').value = config.ServerUrl;
-                    document.querySelector('#ServerDisplayUrl').value = config.ServerDisplayUrl || '';
-                    document.querySelector('#ProxyEnabled').checked = false;
-                    document.querySelector('#ProxyHost').value = '';
-                    document.querySelector('#ProxyPort').value = '';
-                    document.querySelector('#ProxyUsername').value = '';
-                    document.querySelector('#ProxyPassword').value = '';
-                    document.querySelector('#BotToken').value = '';
-                    document.querySelector('#ChatId').value = '';
-                    document.querySelector('#ThreadId').value = '';
-                    document.querySelector('#EnableUser').checked = false;
-                    document.querySelector('#SilentNotification').checked = false;
-                    document.querySelector('#DoNotMentionOwnActivities').checked = false;
-                    document.querySelector('#KeepSerieImage').checked = false;
-                    TelegramNotifierConfig.notificationType.loadNotificationTypes(null);
-                }
-                Dashboard.hideLoadingMsg();
-            });
-        },
-
-        saveConfig: function (e = null) {
-            if (e) {
-                e.preventDefault();
-            }
-            return new Promise((resolve, reject) => {
-                Dashboard.showLoadingMsg();
-                ApiClient.getPluginConfiguration(TelegramNotifierConfig.pluginUniqueId).then(function (config) {
-                    config.EnablePlugin = document.querySelector('#EnablePlugin').checked;
-                    config.ServerUrl = document.querySelector('#ServerUrl').value;
-                    config.ServerDisplayUrl = document.querySelector('#ServerDisplayUrl').value;
-                    config.ProxyEnabled = document.querySelector('#ProxyEnabled').checked;
-                    config.ProxyHost = document.querySelector('#ProxyHost').value;
-                    config.ProxyPort = parseInt(document.querySelector('#ProxyPort').value) || 0;
-                    config.ProxyUsername = document.querySelector('#ProxyUsername').value;
-                    config.ProxyPassword = document.querySelector('#ProxyPassword').value;
-                    const userConfig = config.UserConfigurations.find(x => x.UserId === TelegramNotifierConfig.user.getSelectedUserId());
-                    if (userConfig) {
-                        userConfig.BotToken = document.querySelector('#BotToken').value;
-                        userConfig.ChatId = document.querySelector('#ChatId').value;
-                        userConfig.ThreadId = document.querySelector('#ThreadId').value;
-                        userConfig.EnableUser = document.querySelector('#EnableUser').checked;
-                        userConfig.SilentNotification = document.querySelector('#SilentNotification').checked;
-                        userConfig.DoNotMentionOwnActivities = document.querySelector('#DoNotMentionOwnActivities').checked;
-                        userConfig.KeepSerieImage = document.querySelector('#KeepSerieImage').checked;
-                        TelegramNotifierConfig.notificationType.saveNotificationTypes(userConfig);
-                    } else {
-                        config.UserConfigurations.push({
-                            UserId: TelegramNotifierConfig.user.getSelectedUserId(),
-                            UserName: document.querySelector('#userToConfigure').selectedOptions[0].text,
-                            BotToken: document.querySelector('#BotToken').value,
-                            ChatId: document.querySelector('#ChatId').value,
-                            ThreadId: document.querySelector('#ThreadId').value,
-                            EnableUser: document.querySelector('#EnableUser').checked,
-                            SilentNotification: document.querySelector('#SilentNotification').checked,
-                            DoNotMentionOwnActivities: document.querySelector('#DoNotMentionOwnActivities').checked,
-                            KeepSerieImage: document.querySelector('#KeepSerieImage').checked
-                        });
-                        TelegramNotifierConfig.notificationType.saveNotificationTypes(config.UserConfigurations.find(x => x.UserId === TelegramNotifierConfig.user.getSelectedUserId()));
-                    }
-                    ApiClient.updatePluginConfiguration(TelegramNotifierConfig.pluginUniqueId, config).then(function (result) {
-                        Dashboard.processPluginConfigurationUpdateResult(result);
-                        resolve(result);
-                    }).catch(reject);
-                }).catch(reject);
-            });
-        },
-
-        testBotConfig: function () {
-            var button = this;
-            button.disabled = true;
-            TelegramNotifierConfig.saveConfig()
-                .then(function () {
-                    return ApiClient.getPluginConfiguration(TelegramNotifierConfig.pluginUniqueId);
-                })
-                .then(function (config) {
-                    const userConfig = config.UserConfigurations.find(x => x.UserId === TelegramNotifierConfig.user.getSelectedUserId());
-                    var threadId = userConfig.ThreadId;
-                    if (threadId === '') {
-                        threadId = null;
-                    }
-                    const params = {
-                        botToken: userConfig.BotToken,
-                        chatId: userConfig.ChatId,
-                        threadId: threadId,
-                    };
-                    const url = new URL('/TelegramNotifierApi/TestNotifier', window.location.origin);
-                    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-                    return fetch(url);
-                })
-                .then(function (response) {
-                    Dashboard.hideLoadingMsg();
-                    if (!response.ok) {
-                        throw new Error('Error while sending the test message to the telegram bot');
-                    }
-                    button.style.backgroundColor = 'green';
-                    button.style.color = 'white';
-                    button.textContent = 'Test passed';
-                })
-                .catch(function () {
-                    button.style.backgroundColor = 'red';
-                    button.style.color = 'white';
-                    button.textContent = 'Test failed';
-                })
-                .finally(function () {
-                    setTimeout(function () {
-                        button.disabled = false;
-                        button.style.color = '';
-                        button.style.backgroundColor = '';
-                        button.textContent = 'Test bot configuration';
-                    }, 2000);
-                });
-        }
+    const state = {
+        config: null,
+        catalog: [],   // [{ key, group, label, scope: 'user' | 'server', defaultMessage }]
+        users: [],     // [{ id, name }]
+        messages: {},  // key -> template text currently shown/edited
+        currentTemplateKey: null
     };
 
-    view.addEventListener('viewshow', async function () {
-        await TelegramNotifierConfig.init();
+    const normalizeId = (id) => (id || '').replace(/-/g, '').toLowerCase();
+
+    // ---------- Matrix ----------
+
+    // Every checkbox has data-key and data-col ('server' or a user id).
+    const allBoxes = () => Array.from(view.querySelectorAll('#Matrix input[type=checkbox]'));
+
+    // Check all if at least one is unchecked, otherwise uncheck all.
+    function toggleBoxes(boxes) {
+        if (boxes.length === 0) return;
+        const target = boxes.some((b) => !b.checked);
+        boxes.forEach((b) => { b.checked = target; });
+    }
+
+    function cell(content, className) {
+        const td = document.createElement('td');
+        if (className) td.className = className;
+        if (content instanceof Node) td.appendChild(content); else td.textContent = content;
+        return td;
+    }
+
+    function checkbox(key, col, checked, title) {
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.dataset.key = key;
+        input.dataset.col = col;
+        input.checked = checked;
+        input.title = title;
+        return input;
+    }
+
+    function renderMatrix() {
+        const table = $('#Matrix');
+        table.innerHTML = '';
+        const rules = new Map((state.config.Rules || []).map((r) => [r.Key, r]));
+
+        // Header: Notifica | Server | user1 | user2 ...
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        const corner = document.createElement('th');
+        corner.textContent = 'Notifica';
+        corner.className = 'tn-toggle';
+        corner.title = 'Attiva/disattiva tutto';
+        corner.addEventListener('click', () => toggleBoxes(allBoxes()));
+        headRow.appendChild(corner);
+
+        const columns = [{ id: 'server', name: 'Server' }].concat(state.users);
+        for (const col of columns) {
+            const th = document.createElement('th');
+            th.textContent = col.name;
+            th.className = 'tn-toggle' + (col.id === 'server' ? ' tn-serverhead' : '');
+            th.title = col.id === 'server' ? 'Attiva/disattiva tutte le notifiche del server' : 'Attiva/disattiva tutte le notifiche di ' + col.name;
+            th.addEventListener('click', () => toggleBoxes(allBoxes().filter((b) => b.dataset.col === col.id)));
+            headRow.appendChild(th);
+        }
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        let lastGroup = null;
+        for (const def of state.catalog) {
+            if (def.group !== lastGroup) {
+                lastGroup = def.group;
+                const groupRow = document.createElement('tr');
+                groupRow.className = 'tn-group';
+                const groupName = def.group;
+                const label = document.createElement('span');
+                label.textContent = groupName;
+                label.className = 'tn-toggle';
+                label.title = 'Attiva/disattiva tutto il gruppo';
+                label.addEventListener('click', () => {
+                    const keys = new Set(state.catalog.filter((d) => d.group === groupName).map((d) => d.key));
+                    toggleBoxes(allBoxes().filter((b) => keys.has(b.dataset.key)));
+                });
+                groupRow.appendChild(cell(label));
+                const filler = cell('');
+                filler.colSpan = columns.length;
+                groupRow.appendChild(filler);
+                tbody.appendChild(groupRow);
+            }
+
+            const rule = rules.get(def.key) || { Enabled: false, UserIds: [] };
+            const enabledUsers = new Set((rule.UserIds || []).map(normalizeId));
+            const tr = document.createElement('tr');
+
+            const name = document.createElement('span');
+            name.textContent = def.label;
+            name.className = 'tn-toggle';
+            name.title = 'Attiva/disattiva per tutti';
+            name.addEventListener('click', () => toggleBoxes(allBoxes().filter((b) => b.dataset.key === def.key)));
+            tr.appendChild(cell(name));
+
+            if (def.scope === 'server') {
+                tr.appendChild(cell(checkbox(def.key, 'server', rule.Enabled === true, def.label)));
+                state.users.forEach(() => tr.appendChild(cell('–', 'tn-na')));
+            } else {
+                tr.appendChild(cell('–', 'tn-na'));
+                for (const user of state.users) {
+                    tr.appendChild(cell(checkbox(def.key, user.id, enabledUsers.has(user.id), def.label + ' – ' + user.name)));
+                }
+            }
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+    }
+
+    // ---------- Message templates ----------
+
+    function storeCurrentTemplate() {
+        if (state.currentTemplateKey) {
+            state.messages[state.currentTemplateKey] = $('#TemplateText').value;
+        }
+    }
+
+    function showTemplate(key) {
+        storeCurrentTemplate();
+        state.currentTemplateKey = key;
+        $('#TemplateText').value = state.messages[key] || '';
+    }
+
+    function renderTemplates() {
+        const select = $('#TemplateKey');
+        select.innerHTML = '';
+        const rules = new Map((state.config.Rules || []).map((r) => [r.Key, r]));
+        let lastGroup = null;
+        let optgroup = null;
+        for (const def of state.catalog) {
+            if (def.group !== lastGroup) {
+                lastGroup = def.group;
+                optgroup = document.createElement('optgroup');
+                optgroup.label = def.group;
+                select.appendChild(optgroup);
+            }
+            const option = document.createElement('option');
+            option.value = def.key;
+            option.textContent = def.label;
+            optgroup.appendChild(option);
+            const custom = rules.get(def.key)?.Message;
+            state.messages[def.key] = custom && custom.trim() !== '' ? custom : def.defaultMessage;
+        }
+        state.currentTemplateKey = null;
+        if (state.catalog.length > 0) {
+            select.value = state.catalog[0].key;
+            showTemplate(state.catalog[0].key);
+        }
+    }
+
+    // ---------- Load / save ----------
+
+    async function load() {
+        Dashboard.showLoadingMsg();
+        try {
+            const [config, catalog, users] = await Promise.all([
+                ApiClient.getPluginConfiguration(pluginUniqueId),
+                ApiClient.getJSON(ApiClient.getUrl('TelegramNotifierApi/Catalog')),
+                ApiClient.getUsers()
+            ]);
+            state.config = config;
+            state.catalog = catalog;
+            state.users = users
+                .map((u) => ({ id: normalizeId(u.Id), name: u.Name }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            $('#EnablePlugin').checked = config.EnablePlugin;
+            $('#BotToken').value = config.BotToken || '';
+            $('#ChatId').value = config.ChatId || '';
+            $('#ThreadId').value = config.ThreadId || '';
+            $('#SilentNotification').checked = config.SilentNotification;
+            $('#KeepSerieImage').checked = config.KeepSerieImage;
+            $('#ServerDisplayUrl').value = config.ServerDisplayUrl || '';
+            $('#ServerUrl').value = config.ServerUrl || '';
+            $('#EmptyPlaceholderReplacement').value = config.EmptyPlaceholderReplacement ?? '...';
+            $('#ProxyEnabled').checked = config.ProxyEnabled;
+            $('#ProxyHost').value = config.ProxyHost || '';
+            $('#ProxyPort').value = config.ProxyPort || '';
+            $('#ProxyUsername').value = config.ProxyUsername || '';
+            $('#ProxyPassword').value = config.ProxyPassword || '';
+
+            // Opaque background for the sticky first column/header, matching the current theme.
+            let bg = getComputedStyle(document.body).backgroundColor;
+            if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') bg = '#202020';
+            view.style.setProperty('--tn-bg', bg);
+
+            renderMatrix();
+            renderTemplates();
+        } catch (err) {
+            console.error('TelegramNotifier: failed to load configuration', err);
+            Dashboard.alert('Impossibile caricare la configurazione di Telegram Notifier.');
+        } finally {
+            Dashboard.hideLoadingMsg();
+        }
+    }
+
+    async function save(e) {
+        e.preventDefault();
+        storeCurrentTemplate();
+        Dashboard.showLoadingMsg();
+        try {
+            const config = await ApiClient.getPluginConfiguration(pluginUniqueId);
+            config.EnablePlugin = $('#EnablePlugin').checked;
+            config.BotToken = $('#BotToken').value.trim();
+            config.ChatId = $('#ChatId').value.trim();
+            config.ThreadId = $('#ThreadId').value.trim();
+            config.SilentNotification = $('#SilentNotification').checked;
+            config.KeepSerieImage = $('#KeepSerieImage').checked;
+            config.ServerDisplayUrl = $('#ServerDisplayUrl').value.trim();
+            config.ServerUrl = $('#ServerUrl').value.trim();
+            config.EmptyPlaceholderReplacement = $('#EmptyPlaceholderReplacement').value;
+            config.ProxyEnabled = $('#ProxyEnabled').checked;
+            config.ProxyHost = $('#ProxyHost').value.trim();
+            config.ProxyPort = parseInt($('#ProxyPort').value, 10) || 0;
+            config.ProxyUsername = $('#ProxyUsername').value.trim();
+            config.ProxyPassword = $('#ProxyPassword').value;
+
+            const boxes = allBoxes();
+            config.Rules = state.catalog.map((def) => {
+                const mine = boxes.filter((b) => b.dataset.key === def.key);
+                const text = state.messages[def.key] ?? '';
+                return {
+                    Key: def.key,
+                    Enabled: mine.some((b) => b.dataset.col === 'server' && b.checked),
+                    UserIds: mine.filter((b) => b.dataset.col !== 'server' && b.checked).map((b) => b.dataset.col),
+                    // Store only customised texts, so default messages keep improving with updates.
+                    Message: text.trim() === '' || text === def.defaultMessage ? '' : text
+                };
+            });
+            config.UserConfigurations = [];
+
+            const result = await ApiClient.updatePluginConfiguration(pluginUniqueId, config);
+            state.config = config;
+            Dashboard.processPluginConfigurationUpdateResult(result);
+        } catch (err) {
+            console.error('TelegramNotifier: failed to save configuration', err);
+            Dashboard.alert('Salvataggio non riuscito.');
+        } finally {
+            Dashboard.hideLoadingMsg();
+        }
+    }
+
+    async function sendTest() {
+        const button = $('#TestButton');
+        const result = $('#TestResult');
+        button.disabled = true;
+        result.textContent = 'Invio in corso...';
+        try {
+            const response = await ApiClient.fetch({
+                type: 'POST',
+                url: ApiClient.getUrl('TelegramNotifierApi/Test'),
+                data: JSON.stringify({
+                    BotToken: $('#BotToken').value.trim(),
+                    ChatId: $('#ChatId').value.trim(),
+                    ThreadId: $('#ThreadId').value.trim()
+                }),
+                contentType: 'application/json'
+            });
+            const text = await response.text();
+            result.textContent = (response.ok ? '✅ ' : '❌ ') + text.replace(/^"|"$/g, '');
+        } catch (err) {
+            let text = 'Invio non riuscito: controlla i log di Jellyfin.';
+            if (err && typeof err.text === 'function') {
+                try { text = (await err.text()).replace(/^"|"$/g, ''); } catch (_) { /* keep default */ }
+            }
+            result.textContent = '❌ ' + text;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    $('#TelegramNotifierConfigForm').addEventListener('submit', save);
+    $('#TestButton').addEventListener('click', sendTest);
+    $('#TemplateKey').addEventListener('change', (e) => showTemplate(e.target.value));
+    $('#TemplateReset').addEventListener('click', () => {
+        const def = state.catalog.find((d) => d.key === state.currentTemplateKey);
+        if (def) {
+            $('#TemplateText').value = def.defaultMessage;
+            storeCurrentTemplate();
+        }
     });
+
+    view.addEventListener('viewshow', load);
 }

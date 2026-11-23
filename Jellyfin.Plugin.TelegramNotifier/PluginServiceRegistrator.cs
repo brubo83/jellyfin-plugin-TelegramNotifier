@@ -26,6 +26,9 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         // Register sender.
         serviceCollection.AddScoped<Sender>();
 
+        // Register image provider (reads posters locally, independent of any reverse proxy).
+        serviceCollection.AddSingleton<ImageProvider>();
+
         // Register notification filter.
         serviceCollection.AddScoped<NotificationFilter>();
 

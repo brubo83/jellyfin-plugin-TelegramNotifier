@@ -50,7 +50,7 @@ public class ItemAddedManager : IItemAddedManager
                     {
                         // Remove item from queue.
                         _itemProcessQueue.TryRemove(key, out _);
-                        return;
+                        continue;
                     }
 
                     _logger.LogDebug("Item {ItemName}", item.Name);
@@ -104,17 +104,7 @@ public class ItemAddedManager : IItemAddedManager
                             break;
                     }
 
-                    if (addImage)
-                    {
-                        string serverUrl = Plugin.Instance?.Configuration.ServerUrl ?? "localhost:8096";
-                        string path = "http://" + serverUrl + "/Items/" + item.Id + "/Images/Primary";
-
-                        await notificationFilter.Filter(NotificationFilter.NotificationType.ItemAdded, eventArgs, imagePath: path, subtype: subtype).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await notificationFilter.Filter(NotificationFilter.NotificationType.ItemAdded, eventArgs, subtype: subtype).ConfigureAwait(false);
-                    }
+                    await notificationFilter.Filter(NotificationFilter.NotificationType.ItemAdded, eventArgs, imageItem: addImage ? item : null, subtype: subtype).ConfigureAwait(false);
 
                     // Remove item from queue.
                     _itemProcessQueue.TryRemove(key, out _);
