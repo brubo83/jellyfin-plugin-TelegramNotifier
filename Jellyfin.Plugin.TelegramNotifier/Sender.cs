@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -84,7 +85,11 @@ namespace Jellyfin.Plugin.TelegramNotifier
             }
         }
 
-        public async Task<bool> SendMessage(string notificationType, string message, TelegramTarget target)
+        /// <summary>
+        /// Sends a text message. <paramref name="buttonUrl"/> adds an "Apri in Jellyfin" button; if Telegram
+        /// refuses it (e.g. a URL it does not accept), the message is sent again without the button.
+        /// </summary>
+        public async Task<bool> SendMessage(string notificationType, string message, TelegramTarget target, string? buttonUrl = null)
         {
             if (!target.IsValid)
             {
@@ -92,12 +97,68 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 return false;
             }
 
+            if (await SendTextCore(notificationType, message, target, buttonUrl).ConfigureAwait(false))
+            {
+                return true;
+            }
+
+            if (buttonUrl is null)
+            {
+                return false;
+            }
+
+            _logger.LogWarning("({NotificationType}): retrying without the 'Apri in Jellyfin' button ({Url}).", notificationType, buttonUrl);
+            return await SendTextCore(notificationType, message, target, null).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Uploads the image bytes with the message as caption. If the photo cannot be sent for any
+        /// reason, the message is sent as plain text so the notification is never lost.
+        /// </summary>
+        public async Task<bool> SendMessageWithPhoto(string notificationType, string message, ImagePayload? image, TelegramTarget target, string? buttonUrl = null)
+        {
+            if (image is null)
+            {
+                return await SendMessage(notificationType, message, target, buttonUrl).ConfigureAwait(false);
+            }
+
+            if (!target.IsValid)
+            {
+                _logger.LogWarning("({NotificationType}): bot token or chat id not configured, nothing sent.", notificationType);
+                return false;
+            }
+
+            if (await SendPhotoCore(notificationType, message, image, target, buttonUrl).ConfigureAwait(false))
+            {
+                return true;
+            }
+
+            if (buttonUrl is not null
+                && await SendPhotoCore(notificationType, message, image, target, null).ConfigureAwait(false))
+            {
+                _logger.LogWarning("({NotificationType}): sent without the 'Apri in Jellyfin' button ({Url}).", notificationType, buttonUrl);
+                return true;
+            }
+
+            _logger.LogWarning("({NotificationType}): photo rejected, sending the message without image.", notificationType);
+            return await SendMessage(notificationType, message, target, buttonUrl).ConfigureAwait(false);
+        }
+
+        private static string BuildButtonMarkup(string url) =>
+            JsonSerializer.Serialize(new
+            {
+                inline_keyboard = new[] { new[] { new { text = "▶️ Apri in Jellyfin", url } } }
+            });
+
+        private async Task<bool> SendTextCore(string notificationType, string message, TelegramTarget target, string? buttonUrl)
+        {
             var parameters = new Dictionary<string, string>
             {
                 { "chat_id", target.ChatId },
                 { "text", message },
                 { "parse_mode", "HTML" },
-                { "disable_notification", target.Silent ? "true" : "false" }
+                { "disable_notification", target.Silent ? "true" : "false" },
+                { "link_preview_options", "{\"is_disabled\":true}" }
             };
 
             if (!string.IsNullOrEmpty(target.ThreadId))
@@ -105,51 +166,38 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 parameters.Add("message_thread_id", target.ThreadId);
             }
 
+            if (buttonUrl is not null)
+            {
+                parameters.Add("reply_markup", BuildButtonMarkup(buttonUrl));
+            }
+
             using var content = new FormUrlEncodedContent(parameters);
             return await PostAsync(notificationType, "sendMessage", content, target).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Uploads the image bytes with the message as caption. If the photo cannot be sent for any
-        /// reason, the message is sent as plain text so the notification is never lost.
-        /// </summary>
-        public async Task<bool> SendMessageWithPhoto(string notificationType, string message, ImagePayload? image, TelegramTarget target)
+        private async Task<bool> SendPhotoCore(string notificationType, string message, ImagePayload image, TelegramTarget target, string? buttonUrl)
         {
-            if (image is null)
+            using var formData = new MultipartFormDataContent();
+            formData.Add(new StringContent(target.ChatId), "chat_id");
+            formData.Add(new StringContent(TruncateCaption(message)), "caption");
+            formData.Add(new StringContent(target.Silent ? "true" : "false"), "disable_notification");
+            formData.Add(new StringContent("HTML"), "parse_mode");
+            if (!string.IsNullOrEmpty(target.ThreadId))
             {
-                return await SendMessage(notificationType, message, target).ConfigureAwait(false);
+                formData.Add(new StringContent(target.ThreadId), "message_thread_id");
             }
 
-            if (!target.IsValid)
+            if (buttonUrl is not null)
             {
-                _logger.LogWarning("({NotificationType}): bot token or chat id not configured, nothing sent.", notificationType);
-                return false;
+                formData.Add(new StringContent(BuildButtonMarkup(buttonUrl)), "reply_markup");
             }
 
-            using (var formData = new MultipartFormDataContent())
-            {
-                formData.Add(new StringContent(target.ChatId), "chat_id");
-                formData.Add(new StringContent(TruncateCaption(message)), "caption");
-                formData.Add(new StringContent(target.Silent ? "true" : "false"), "disable_notification");
-                formData.Add(new StringContent("HTML"), "parse_mode");
-                if (!string.IsNullOrEmpty(target.ThreadId))
-                {
-                    formData.Add(new StringContent(target.ThreadId), "message_thread_id");
-                }
+            var imageContent = new ByteArrayContent(image.Data);
+            imageContent.Headers.ContentType = new MediaTypeHeaderValue(
+                image.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg");
+            formData.Add(imageContent, "photo", image.FileName);
 
-                var imageContent = new ByteArrayContent(image.Data);
-                imageContent.Headers.ContentType = new MediaTypeHeaderValue(
-                    image.FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "image/png" : "image/jpeg");
-                formData.Add(imageContent, "photo", image.FileName);
-
-                if (await PostAsync(notificationType, "sendPhoto", formData, target).ConfigureAwait(false))
-                {
-                    return true;
-                }
-            }
-
-            _logger.LogWarning("({NotificationType}): photo rejected, sending the message without image.", notificationType);
-            return await SendMessage(notificationType, message, target).ConfigureAwait(false);
+            return await PostAsync(notificationType, "sendPhoto", formData, target).ConfigureAwait(false);
         }
 
         private async Task<bool> PostAsync(string notificationType, string method, HttpContent content, TelegramTarget target)

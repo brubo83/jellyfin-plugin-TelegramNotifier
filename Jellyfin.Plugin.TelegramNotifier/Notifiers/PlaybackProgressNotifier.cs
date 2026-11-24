@@ -71,7 +71,7 @@ public class PlaybackProgressNotifier : IEventConsumer<PlaybackProgressEventArgs
             return;
         }
 
-        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackProgress, eventArgs, userIds: userIds, subtype: subtype).ConfigureAwait(false);
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackProgress, eventArgs, userIds: userIds, subtype: subtype, linkItem: eventArgs.Item).ConfigureAwait(false);
     }
 
     private static bool ShouldNotify(string key)

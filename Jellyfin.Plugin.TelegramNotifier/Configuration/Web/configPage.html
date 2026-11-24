@@ -1,6 +1,9 @@
 <div id="TelegramNotifierConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
     data-require="emby-input,emby-button,emby-select,emby-checkbox,emby-textarea" data-controller="__plugin/Telegram Notifier.js">
     <style>
+        #TelegramNotifierConfigPage .tn-scroll-top { overflow-x: auto; overflow-y: hidden; height: 16px; margin-top: .5em; }
+        #TelegramNotifierConfigPage .tn-scroll-top > div { height: 1px; }
+        #TelegramNotifierConfigPage .tn-silenthead { font-size: 1.1em; }
         #TelegramNotifierConfigPage .tn-matrix-wrap { overflow-x: auto; margin: 0.5em 0 1em; border: 1px solid rgba(128,128,128,.35); border-radius: 6px; }
         #TelegramNotifierConfigPage table.tn-matrix { border-collapse: collapse; width: 100%; font-size: .95em; }
         #TelegramNotifierConfigPage .tn-matrix th, #TelegramNotifierConfigPage .tn-matrix td { padding: .45em .7em; border-bottom: 1px solid rgba(128,128,128,.2); text-align: center; white-space: nowrap; }
@@ -63,8 +66,10 @@
                         per tutta la riga, il nome di un <b>gruppo</b> per tutto il gruppo.
                         Le notifiche che riguardano un utente (riproduzioni, sessioni, accessi...) si attivano per utente;
                         quelle del server (aggiunte in libreria, plugin, attività...) si attivano nella colonna <i>Server</i>.
+                        La colonna 🔕 rende silenziosa la notifica (arriva senza suono).
                     </div>
-                    <div class="tn-matrix-wrap">
+                    <div class="tn-scroll-top" id="MatrixScrollTop"><div></div></div>
+                    <div class="tn-matrix-wrap" id="MatrixWrap">
                         <table class="tn-matrix" id="Matrix"></table>
                     </div>
                 </div>
@@ -100,7 +105,7 @@
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ServerDisplayUrl">URL pubblico (per i link nei messaggi)</label>
                         <input id="ServerDisplayUrl" type="text" is="emby-input" />
-                        <div class="fieldDescription">Es. https://jellyfin.miodominio.it. Usato solo nel segnaposto {server.Url}.</div>
+                        <div class="fieldDescription">Es. https://jellyfin.miodominio.it. Serve per il pulsante "Apri in Jellyfin" sotto le notifiche di riproduzione e dei nuovi contenuti, e per il segnaposto {server.Url}. Se è vuoto il pulsante non compare.</div>
                     </div>
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ServerUrl">URL interno di Jellyfin (facoltativo, avanzato)</label>

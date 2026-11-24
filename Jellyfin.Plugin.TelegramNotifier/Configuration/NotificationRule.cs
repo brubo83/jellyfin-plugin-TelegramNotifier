@@ -29,6 +29,12 @@ public class NotificationRule
     public string[] UserIds { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the message is sent without sound.
+    /// Null means the default of the notification type.
+    /// </summary>
+    public bool? Silent { get; set; }
+
+    /// <summary>
     /// Gets or sets a custom message template. Empty means the default template.
     /// </summary>
     public string? Message { get; set; }

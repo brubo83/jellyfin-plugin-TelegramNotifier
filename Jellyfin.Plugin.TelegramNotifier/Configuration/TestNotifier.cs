@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Enums;
 using Jellyfin.Plugin.TelegramNotifier.Configuration;
+using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
@@ -24,9 +25,11 @@ public class TestNotifier : ControllerBase
     private readonly Sender _sender;
     private readonly ImageProvider _imageProvider;
     private readonly ILibraryManager _libraryManager;
+    private readonly IServerApplicationHost _applicationHost;
 
-    public TestNotifier(Sender sender, ImageProvider imageProvider, ILibraryManager libraryManager)
+    public TestNotifier(Sender sender, ImageProvider imageProvider, ILibraryManager libraryManager, IServerApplicationHost applicationHost)
     {
+        _applicationHost = applicationHost;
         _sender = sender;
         _imageProvider = imageProvider;
         _libraryManager = libraryManager;
@@ -44,7 +47,8 @@ public class TestNotifier : ControllerBase
             group = d.Group,
             label = d.Label,
             scope = d.Scope == NotificationScope.User ? "user" : "server",
-            defaultMessage = d.DefaultMessage
+            defaultMessage = d.DefaultMessage,
+            defaultSilent = d.DefaultSilent
         }));
     }
 
@@ -79,15 +83,16 @@ public class TestNotifier : ControllerBase
 
         ImagePayload? image = item is null ? null : await _imageProvider.GetPrimaryImageAsync(item).ConfigureAwait(false);
 
-        string text = "[Jellyfin] Messaggio di prova 🎉\nLa configurazione del bot funziona.";
+        string text = "🎉 <b>Messaggio di prova</b>\n<i>La configurazione del bot funziona.</i>";
         if (item is not null)
         {
             text += image is null
-                ? $"\n⚠️ Impossibile leggere la locandina di \"{item.Name}\": controlla i log di Jellyfin."
-                : $"\n🖼️ Locandina di \"{item.Name}\" caricata correttamente.";
+                ? $"\n⚠️ Impossibile leggere la locandina di \"{System.Net.WebUtility.HtmlEncode(item.Name)}\": controlla i log di Jellyfin."
+                : $"\n🖼️ Locandina di \"{System.Net.WebUtility.HtmlEncode(item.Name)}\" caricata correttamente.";
         }
 
-        bool ok = await _sender.SendMessageWithPhoto("Test", text, image, target).ConfigureAwait(false);
+        string? buttonUrl = NotificationFilter.BuildItemUrl(item, _applicationHost.SystemId);
+        bool ok = await _sender.SendMessageWithPhoto("Test", text, image, target, buttonUrl).ConfigureAwait(false);
         return ok
             ? Ok(image is null ? "Messaggio inviato (senza immagine)." : "Messaggio con immagine inviato.")
             : BadRequest("Invio non riuscito: controlla bot token, chat id e i log di Jellyfin.");
