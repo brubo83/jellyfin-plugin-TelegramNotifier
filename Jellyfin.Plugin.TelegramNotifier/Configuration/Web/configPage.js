@@ -181,6 +181,7 @@ export default function (view) {
             $('#KeepSerieImage').checked = config.KeepSerieImage;
             $('#ServerDisplayUrl').value = config.ServerDisplayUrl || '';
             $('#ServerUrl').value = config.ServerUrl || '';
+            $('#PlaybackProgressIntervalMinutes').value = config.PlaybackProgressIntervalMinutes || 15;
             $('#EmptyPlaceholderReplacement').value = config.EmptyPlaceholderReplacement ?? '...';
             $('#ProxyEnabled').checked = config.ProxyEnabled;
             $('#ProxyHost').value = config.ProxyHost || '';
@@ -217,6 +218,7 @@ export default function (view) {
             config.KeepSerieImage = $('#KeepSerieImage').checked;
             config.ServerDisplayUrl = $('#ServerDisplayUrl').value.trim();
             config.ServerUrl = $('#ServerUrl').value.trim();
+            config.PlaybackProgressIntervalMinutes = parseInt($('#PlaybackProgressIntervalMinutes').value, 10) || 15;
             config.EmptyPlaceholderReplacement = $('#EmptyPlaceholderReplacement').value;
             config.ProxyEnabled = $('#ProxyEnabled').checked;
             config.ProxyHost = $('#ProxyHost').value.trim();

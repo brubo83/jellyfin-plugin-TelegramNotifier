@@ -75,8 +75,8 @@ public static class NotificationCatalog
 
         new("PlaybackStartMovies", Playback, "Avvio: film", NotificationScope.User),
         new("PlaybackStartEpisodes", Playback, "Avvio: episodio", NotificationScope.User),
-        new("PlaybackProgressMovies", Playback, "In corso: film (sconsigliato)", NotificationScope.User),
-        new("PlaybackProgressEpisodes", Playback, "In corso: episodio (sconsigliato)", NotificationScope.User),
+        new("PlaybackProgressMovies", Playback, "Sta ancora guardando: film", NotificationScope.User),
+        new("PlaybackProgressEpisodes", Playback, "Sta ancora guardando: episodio", NotificationScope.User),
         new("PlaybackStopMovies", Playback, "Stop: film", NotificationScope.User),
         new("PlaybackStopEpisodes", Playback, "Stop: episodio", NotificationScope.User),
 

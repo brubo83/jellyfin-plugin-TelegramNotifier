@@ -93,6 +93,11 @@
                         </label>
                     </div>
                     <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="PlaybackProgressIntervalMinutes">Intervallo notifiche "sta ancora guardando" (minuti)</label>
+                        <input id="PlaybackProgressIntervalMinutes" type="number" min="1" is="emby-input" />
+                        <div class="fieldDescription">Per ogni riproduzione arriva al massimo un messaggio ogni N minuti, il primo dopo N minuti dall'avvio.</div>
+                    </div>
+                    <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="ServerDisplayUrl">URL pubblico (per i link nei messaggi)</label>
                         <input id="ServerDisplayUrl" type="text" is="emby-input" />
                         <div class="fieldDescription">Es. https://jellyfin.miodominio.it. Usato solo nel segnaposto {server.Url}.</div>

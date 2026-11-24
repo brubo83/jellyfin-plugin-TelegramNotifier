@@ -515,35 +515,35 @@ namespace Jellyfin.Plugin.TelegramNotifier
         private static string GetGenresSafely(object obj)
         {
             var item = GetEffectiveItem(obj);
-            if (item == null) return "No genres available";
+            if (item == null) return string.Empty;
             var result = GetItemGenresSafely(item);
-            return string.IsNullOrEmpty(result) ? "No genres available" : result;
+            return string.IsNullOrEmpty(result) ? string.Empty : result;
         }
 
         private static string GetSerieGenresSafely(object obj)
         {
             var itemProperty = obj?.GetType().GetProperty("Item");
-            if (itemProperty == null || itemProperty.GetValue(obj) == null) return "No genres available";
+            if (itemProperty == null || itemProperty.GetValue(obj) == null) return string.Empty;
             var item = itemProperty.GetValue(obj);
             var seriesProperty = item?.GetType().GetProperty("Series");
-            if (seriesProperty == null || seriesProperty.GetValue(item) == null) return "No genres available";
+            if (seriesProperty == null || seriesProperty.GetValue(item) == null) return string.Empty;
             var series = seriesProperty.GetValue(item);
             var genresProperty = series?.GetType().GetProperty("Genres");
-            if (genresProperty == null || genresProperty.GetValue(series) == null) return "No genres available";
+            if (genresProperty == null || genresProperty.GetValue(series) == null) return string.Empty;
             var genresValue = genresProperty.GetValue(series);
             if (genresValue is IEnumerable<object> genres)
                 return string.Join(", ", genres.Select(g => g?.ToString() ?? string.Empty).Where(s => !string.IsNullOrEmpty(s)));
             if (genresValue is System.Collections.IEnumerable enumGenres)
                 return string.Join(", ", enumGenres.Cast<object>().Select(g => g?.ToString() ?? string.Empty).Where(s => !string.IsNullOrEmpty(s)));
-            return "No genres available";
+            return string.Empty;
         }
 
         private static string GetDurationSafely(object obj)
         {
             var item = GetEffectiveItem(obj);
-            if (item == null) return "No duration available";
+            if (item == null) return string.Empty;
             var runTime = GetItemRunTimeSafely(item);
-            return string.IsNullOrEmpty(runTime) ? "No duration available" : runTime;
+            return string.IsNullOrEmpty(runTime) ? string.Empty : runTime;
         }
 
         private static string? GetSeasonNumberSafely(object obj)

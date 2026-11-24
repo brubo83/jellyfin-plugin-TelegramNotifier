@@ -33,9 +33,9 @@ namespace Jellyfin.Plugin.TelegramNotifier.Configuration
 
         public static string ItemDeletedBooks { get; } = "🗑️📖 [Libro] {item.Name} rimosso dalla libreria";
 
-        public static string PlaybackStartMovies { get; } = "👤 {eventArgs.Users[0].Username} sta guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})\n📺 [{eventArgs.Item.MediaType}] {eventArgs.Item.Genres}\n🕒 {duration}";
+        public static string PlaybackStartMovies { get; } = "👤 {eventArgs.Users[0].Username} sta guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear}){?eventArgs.Item.Genres}\n📺 {eventArgs.Item.Genres}{/eventArgs.Item.Genres}\n🕒 {duration}";
 
-        public static string PlaybackStartEpisodes { get; } = "👤 {eventArgs.Users[0].Username} sta guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'\n📺 [{eventArgs.Item.MediaType}] {eventArgs.Item.Genres}\n🕒 {duration}";
+        public static string PlaybackStartEpisodes { get; } = "👤 {eventArgs.Users[0].Username} sta guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'{?eventArgs.Item.Series.Genres}\n📺 {eventArgs.Item.Series.Genres}{/eventArgs.Item.Series.Genres}\n🕒 {duration}";
 
         public static string PlaybackProgressMovies { get; } = "👤 {eventArgs.Users[0].Username} sta ancora guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})";
 
