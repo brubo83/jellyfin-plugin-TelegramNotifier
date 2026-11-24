@@ -5,19 +5,19 @@ namespace Jellyfin.Plugin.TelegramNotifier.Configuration
     /// </summary>
     public static class DefaultMessageConfiguration
     {
-        public static string ItemAddedMovies { get; } = "🆕🎬 <b>{item.Name}</b> ({item.ProductionYear})\n<i>Film aggiunto alla libreria</i>{?item.Genres}\n🎭 {item.Genres}{/item.Genres}";
+        public static string ItemAddedMovies { get; } = "🆕🎬 <b>{item.Name}</b> ({item.ProductionYear})\n<i>Film aggiunto alla libreria</i>{?item.Genres}\n🎭 {item.Genres}{/item.Genres}{?item.CommunityRating}\n⭐ {item.CommunityRating}{/item.CommunityRating}{?item.Overview}\n<blockquote expandable>{item.Overview}</blockquote>{/item.Overview}";
 
-        public static string ItemAddedSeries { get; } = "🆕📺 <b>{serie.Name}</b> ({item.ProductionYear})\n<i>Serie aggiunta alla libreria</i>{?item.Genres}\n🎭 {item.Genres}{/item.Genres}";
+        public static string ItemAddedSeries { get; } = "🆕📺 <b>{serie.Name}</b> ({item.ProductionYear})\n<i>Serie aggiunta alla libreria</i>{?item.Genres}\n🎭 {item.Genres}{/item.Genres}{?item.CommunityRating}\n⭐ {item.CommunityRating}{/item.CommunityRating}{?item.Overview}\n<blockquote expandable>{item.Overview}</blockquote>{/item.Overview}";
 
         public static string ItemAddedSeasons { get; } = "🆕📺 <b>{season.Series.Name}</b>\n<i>Stagione {seasonNumber} aggiunta alla libreria</i>";
 
-        public static string ItemAddedEpisodes { get; } = "🆕📺 <b>{episode.Series.Name}</b>\n<i>S{eSeasonNumber}E{episodeNumber} · {item.Name}</i>\nEpisodio aggiunto alla libreria";
+        public static string ItemAddedEpisodes { get; } = "🆕📺 <b>{episode.Series.Name}</b>\n<i>S{eSeasonNumber}E{episodeNumber} · {item.Name}</i>\nEpisodio aggiunto alla libreria{?item.Overview}\n<blockquote expandable>{item.Overview}</blockquote>{/item.Overview}";
 
         public static string ItemAddedAlbums { get; } = "🆕🎵 <b>{album.Name}</b> ({item.ProductionYear})\n<i>Album aggiunto alla libreria</i>";
 
         public static string ItemAddedSongs { get; } = "🆕🎵 <b>{audio.Name}</b> ({item.ProductionYear})\n<i>Brano aggiunto alla libreria</i>";
 
-        public static string ItemAddedBooks { get; } = "🆕📖 <b>{item.Name}</b>\n<i>Libro aggiunto alla libreria</i>";
+        public static string ItemAddedBooks { get; } = "🆕📖 <b>{item.Name}</b>\n<i>Libro aggiunto alla libreria</i>{?item.Overview}\n<blockquote expandable>{item.Overview}</blockquote>{/item.Overview}";
 
         public static string ItemDeletedMovies { get; } = "🗑️🎬 <b>{item.Name}</b> ({item.ProductionYear})\n<i>Film rimosso dalla libreria</i>";
 
@@ -33,9 +33,9 @@ namespace Jellyfin.Plugin.TelegramNotifier.Configuration
 
         public static string ItemDeletedBooks { get; } = "🗑️📖 <b>{item.Name}</b>\n<i>Libro rimosso dalla libreria</i>";
 
-        public static string PlaybackStartMovies { get; } = "▶️ <b>{eventArgs.Item.Name}</b> ({eventArgs.Item.ProductionYear})\n👤 {eventArgs.Users[0].Username}\n<i>{playback.Device}{?duration} · {duration}{/duration}{?eventArgs.Item.Genres} · {eventArgs.Item.Genres}{/eventArgs.Item.Genres}</i>{?playback.Method}\n📺 {?playback.Quality}{playback.Quality} · {/playback.Quality}{playback.Method}{/playback.Method}";
+        public static string PlaybackStartMovies { get; } = "▶️ <b>{eventArgs.Item.Name}</b> ({eventArgs.Item.ProductionYear})\n👤 {eventArgs.Users[0].Username}\n<i>{playback.Device}{?duration} · {duration}{/duration}{?eventArgs.Item.Genres} · {eventArgs.Item.Genres}{/eventArgs.Item.Genres}{?item.CommunityRating} · ⭐ {item.CommunityRating}{/item.CommunityRating}</i>{?playback.Method}\n📺 {?playback.Quality}{playback.Quality} · {/playback.Quality}{playback.Method}{/playback.Method}{?playback.Progress}\n⏩ Riprende dal {playback.Progress}{/playback.Progress}{?eventArgs.Item.Overview}\n<blockquote expandable>{eventArgs.Item.Overview}</blockquote>{/eventArgs.Item.Overview}";
 
-        public static string PlaybackStartEpisodes { get; } = "▶️ <b>{eventArgs.Item.Series.Name}</b>\n<i>S{playbackSeasonNumber}E{playbackEpisodeNumber} · {eventArgs.Item.Name}</i>\n👤 {eventArgs.Users[0].Username}\n<i>{playback.Device}{?duration} · {duration}{/duration}{?eventArgs.Item.Series.Genres} · {eventArgs.Item.Series.Genres}{/eventArgs.Item.Series.Genres}</i>{?playback.Method}\n📺 {?playback.Quality}{playback.Quality} · {/playback.Quality}{playback.Method}{/playback.Method}";
+        public static string PlaybackStartEpisodes { get; } = "▶️ <b>{eventArgs.Item.Series.Name}</b>\n<i>S{playbackSeasonNumber}E{playbackEpisodeNumber} · {eventArgs.Item.Name}</i>\n👤 {eventArgs.Users[0].Username}\n<i>{playback.Device}{?duration} · {duration}{/duration}{?eventArgs.Item.Series.Genres} · {eventArgs.Item.Series.Genres}{/eventArgs.Item.Series.Genres}{?item.CommunityRating} · ⭐ {item.CommunityRating}{/item.CommunityRating}</i>{?playback.Method}\n📺 {?playback.Quality}{playback.Quality} · {/playback.Quality}{playback.Method}{/playback.Method}{?playback.Progress}\n⏩ Riprende dal {playback.Progress}{/playback.Progress}{?eventArgs.Item.Overview}\n<blockquote expandable>{eventArgs.Item.Overview}</blockquote>{/eventArgs.Item.Overview}";
 
         public static string PlaybackProgressMovies { get; } = "⏯️ <b>{eventArgs.Item.Name}</b> ({eventArgs.Item.ProductionYear})\n👤 {eventArgs.Users[0].Username} sta ancora guardando\n<i>{playback.Device}</i>";
 

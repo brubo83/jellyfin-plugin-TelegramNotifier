@@ -117,6 +117,7 @@ namespace Jellyfin.Plugin.TelegramNotifier
                     { "{playback.Device}", GetPropertySafely(objEventArgs, new[] { "DeviceName" }) },
                     { "{playback.Method}", GetPlayMethodSafely(objEventArgs) },
                     { "{playback.Quality}", GetQualitySafely(effectiveItem) },
+                    { "{playback.Progress}", GetResumeSafely(objEventArgs, effectiveItem) },
                     { "{serie.Name}", GetPropertySafely(objEventArgs, SerieNamePath) },
                     { "{season.Series.Name}", GetPropertySafely(objEventArgs, SeasonSeriesNamePath) },
                     { "{episode.Series.Name}", GetPropertySafely(objEventArgs, EpisodeSeriesNamePath) },
@@ -259,6 +260,19 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 default:
                     return string.Empty;
             }
+        }
+
+        // "35% · 17 min" when playback resumes from a saved position (not at the very start or end).
+        private static string GetResumeSafely(object obj, object? item)
+        {
+            if (item == null) return string.Empty;
+            if (!long.TryParse(GetPropertySafely(obj, new[] { "PlaybackPositionTicks" }), out long position)) return string.Empty;
+            if (!long.TryParse(GetPropertySafely(item, new[] { "RunTimeTicks" }), out long runtime) || runtime <= 0) return string.Empty;
+            double percent = 100.0 * position / runtime;
+            if (position < TimeSpan.TicksPerMinute || percent >= 95) return string.Empty;
+            long minutes = position / TimeSpan.TicksPerMinute;
+            string time = minutes >= 60 ? $"{minutes / 60}h {minutes % 60:00}m" : $"{minutes} min";
+            return $"{Math.Round(percent).ToString(CultureInfo.InvariantCulture)}% · {time}";
         }
 
         private static string GetQualitySafely(object? item)

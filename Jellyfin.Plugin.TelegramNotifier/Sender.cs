@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -38,6 +40,22 @@ namespace Jellyfin.Plugin.TelegramNotifier
             var c = Plugin.Config;
             return new TelegramTarget(c.BotToken, c.ChatId, c.ThreadId, c.SilentNotification);
         }
+    }
+
+    /// <summary>
+    /// A link button shown under a Telegram message.
+    /// </summary>
+    public sealed class InlineButton
+    {
+        public InlineButton(string text, string url)
+        {
+            Text = text;
+            Url = url;
+        }
+
+        public string Text { get; }
+
+        public string Url { get; }
     }
 
     public partial class Sender : IDisposable
@@ -86,10 +104,10 @@ namespace Jellyfin.Plugin.TelegramNotifier
         }
 
         /// <summary>
-        /// Sends a text message. <paramref name="buttonUrl"/> adds an "Apri in Jellyfin" button; if Telegram
+        /// Sends a text message. <paramref name="buttons"/> adds link buttons (Apri in Jellyfin, IMDb); if Telegram
         /// refuses it (e.g. a URL it does not accept), the message is sent again without the button.
         /// </summary>
-        public async Task<bool> SendMessage(string notificationType, string message, TelegramTarget target, string? buttonUrl = null)
+        public async Task<bool> SendMessage(string notificationType, string message, TelegramTarget target, IReadOnlyList<InlineButton>? buttons = null)
         {
             if (!target.IsValid)
             {
@@ -97,17 +115,17 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 return false;
             }
 
-            if (await SendTextCore(notificationType, message, target, buttonUrl).ConfigureAwait(false))
+            if (await SendTextCore(notificationType, message, target, buttons).ConfigureAwait(false))
             {
                 return true;
             }
 
-            if (buttonUrl is null)
+            if (buttons is null || buttons.Count == 0)
             {
                 return false;
             }
 
-            _logger.LogWarning("({NotificationType}): retrying without the 'Apri in Jellyfin' button ({Url}).", notificationType, buttonUrl);
+            _logger.LogWarning("({NotificationType}): retrying without buttons ({Urls}).", notificationType, string.Join(", ", buttons.Select(b => b.Url)));
             return await SendTextCore(notificationType, message, target, null).ConfigureAwait(false);
         }
 
@@ -115,11 +133,11 @@ namespace Jellyfin.Plugin.TelegramNotifier
         /// Uploads the image bytes with the message as caption. If the photo cannot be sent for any
         /// reason, the message is sent as plain text so the notification is never lost.
         /// </summary>
-        public async Task<bool> SendMessageWithPhoto(string notificationType, string message, ImagePayload? image, TelegramTarget target, string? buttonUrl = null)
+        public async Task<bool> SendMessageWithPhoto(string notificationType, string message, ImagePayload? image, TelegramTarget target, IReadOnlyList<InlineButton>? buttons = null)
         {
             if (image is null)
             {
-                return await SendMessage(notificationType, message, target, buttonUrl).ConfigureAwait(false);
+                return await SendMessage(notificationType, message, target, buttons).ConfigureAwait(false);
             }
 
             if (!target.IsValid)
@@ -128,29 +146,29 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 return false;
             }
 
-            if (await SendPhotoCore(notificationType, message, image, target, buttonUrl).ConfigureAwait(false))
+            if (await SendPhotoCore(notificationType, message, image, target, buttons).ConfigureAwait(false))
             {
                 return true;
             }
 
-            if (buttonUrl is not null
+            if (buttons is { Count: > 0 }
                 && await SendPhotoCore(notificationType, message, image, target, null).ConfigureAwait(false))
             {
-                _logger.LogWarning("({NotificationType}): sent without the 'Apri in Jellyfin' button ({Url}).", notificationType, buttonUrl);
+                _logger.LogWarning("({NotificationType}): sent without buttons ({Urls}).", notificationType, string.Join(", ", buttons.Select(b => b.Url)));
                 return true;
             }
 
             _logger.LogWarning("({NotificationType}): photo rejected, sending the message without image.", notificationType);
-            return await SendMessage(notificationType, message, target, buttonUrl).ConfigureAwait(false);
+            return await SendMessage(notificationType, message, target, buttons).ConfigureAwait(false);
         }
 
-        private static string BuildButtonMarkup(string url) =>
+        private static string BuildButtonMarkup(IReadOnlyList<InlineButton> buttons) =>
             JsonSerializer.Serialize(new
             {
-                inline_keyboard = new[] { new[] { new { text = "▶️ Apri in Jellyfin", url } } }
+                inline_keyboard = new[] { buttons.Select(b => new { text = b.Text, url = b.Url }).ToArray() }
             });
 
-        private async Task<bool> SendTextCore(string notificationType, string message, TelegramTarget target, string? buttonUrl)
+        private async Task<bool> SendTextCore(string notificationType, string message, TelegramTarget target, IReadOnlyList<InlineButton>? buttons)
         {
             var parameters = new Dictionary<string, string>
             {
@@ -166,16 +184,16 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 parameters.Add("message_thread_id", target.ThreadId);
             }
 
-            if (buttonUrl is not null)
+            if (buttons is { Count: > 0 })
             {
-                parameters.Add("reply_markup", BuildButtonMarkup(buttonUrl));
+                parameters.Add("reply_markup", BuildButtonMarkup(buttons));
             }
 
             using var content = new FormUrlEncodedContent(parameters);
             return await PostAsync(notificationType, "sendMessage", content, target).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendPhotoCore(string notificationType, string message, ImagePayload image, TelegramTarget target, string? buttonUrl)
+        private async Task<bool> SendPhotoCore(string notificationType, string message, ImagePayload image, TelegramTarget target, IReadOnlyList<InlineButton>? buttons)
         {
             using var formData = new MultipartFormDataContent();
             formData.Add(new StringContent(target.ChatId), "chat_id");
@@ -187,9 +205,9 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 formData.Add(new StringContent(target.ThreadId), "message_thread_id");
             }
 
-            if (buttonUrl is not null)
+            if (buttons is { Count: > 0 })
             {
-                formData.Add(new StringContent(BuildButtonMarkup(buttonUrl)), "reply_markup");
+                formData.Add(new StringContent(BuildButtonMarkup(buttons)), "reply_markup");
             }
 
             var imageContent = new ByteArrayContent(image.Data);
@@ -237,12 +255,41 @@ namespace Jellyfin.Plugin.TelegramNotifier
                 return message;
             }
 
-            string cut = message.Substring(0, MaxCaptionLength - 1);
+            // Leave room for the closing tags added below.
+            string cut = message.Substring(0, MaxCaptionLength - 60);
 
             // Do not leave half an HTML tag or entity at the end.
-            cut = DanglingMarkupRegex().Replace(cut, string.Empty);
-            return cut.TrimEnd() + "…";
+            cut = DanglingMarkupRegex().Replace(cut, string.Empty).TrimEnd() + "…";
+
+            // Close the tags left open by the cut (e.g. the expandable plot blockquote).
+            var open = new Stack<string>();
+            foreach (Match m in TagRegex().Matches(cut))
+            {
+                string name = m.Groups[2].Value.ToLowerInvariant();
+                if (m.Groups[1].Value == "/")
+                {
+                    if (open.Count > 0 && open.Peek() == name)
+                    {
+                        open.Pop();
+                    }
+                }
+                else
+                {
+                    open.Push(name);
+                }
+            }
+
+            var sb = new StringBuilder(cut);
+            while (open.Count > 0)
+            {
+                sb.Append("</").Append(open.Pop()).Append('>');
+            }
+
+            return sb.ToString();
         }
+
+        [GeneratedRegex(@"<(/?)([a-zA-Z][a-zA-Z0-9-]*)[^>]*>")]
+        private static partial Regex TagRegex();
 
         [GeneratedRegex(@"(<[^>]*|&[a-zA-Z#0-9]*)$")]
         private static partial Regex DanglingMarkupRegex();

@@ -91,8 +91,8 @@ public class TestNotifier : ControllerBase
                 : $"\n🖼️ Locandina di \"{System.Net.WebUtility.HtmlEncode(item.Name)}\" caricata correttamente.";
         }
 
-        string? buttonUrl = NotificationFilter.BuildItemUrl(item, _applicationHost.SystemId);
-        bool ok = await _sender.SendMessageWithPhoto("Test", text, image, target, buttonUrl).ConfigureAwait(false);
+        var buttons = NotificationFilter.BuildButtons(item, _applicationHost.SystemId);
+        bool ok = await _sender.SendMessageWithPhoto("Test", text, image, target, buttons).ConfigureAwait(false);
         return ok
             ? Ok(image is null ? "Messaggio inviato (senza immagine)." : "Messaggio con immagine inviato.")
             : BadRequest("Invio non riuscito: controlla bot token, chat id e i log di Jellyfin.");
