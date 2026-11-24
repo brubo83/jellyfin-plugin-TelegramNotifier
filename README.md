@@ -1,182 +1,110 @@
-# Jellyfin Plugin Telegram Notifier
+# Jellyfin Telegram Notifier (fork di brubo83)
 
-<a href='https://ko-fi.com/B0B8112Y0Y' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi1.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+Plugin per [Jellyfin](https://github.com/jellyfin) che invia notifiche su Telegram per quello che succede sul server:
+riproduzioni, nuovi contenuti in libreria, accessi, plugin, attività pianificate e altro.
 
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/RomainPierre7/jellyfin-plugin-TelegramNotifier/total)
+Questo è un fork di [RomainPierre7/jellyfin-plugin-TelegramNotifier](https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier),
+pensato per **monitorare il proprio server** e modificato così:
 
-![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/RomainPierre7/jellyfin-plugin-TelegramNotifier/latest/total)
+- **Funziona dietro reverse proxy** (nginx-proxy-manager, Traefik, Caddy...). L'originale scaricava le locandine dall'URL pubblico
+  del server e, se non ci riusciva, scartava l'intera notifica. Ora le immagini vengono lette dal disco (o dall'indirizzo locale di
+  Jellyfin) e caricate su Telegram. Se l'immagine non è disponibile, il messaggio arriva comunque senza foto.
+- **Un solo bot e un solo canale** per tutte le notifiche.
+- **Una matrice nelle impostazioni**: righe = tipi di notifica, colonne = utenti Jellyfin. Così, per esempio, puoi ricevere le
+  riproduzioni di tutti tranne le tue. Clicca il nome di un utente per attivare/disattivare la colonna, il nome di una notifica per
+  la riga, il nome di un gruppo per tutto il gruppo.
+- **Testi in italiano** di default, modificabili dalla pagina delle impostazioni.
+- Messaggi più robusti: titoli e trame con `<` o `&` non bloccano più l'invio, le didascalie troppo lunghe vengono accorciate,
+  gli errori di Telegram compaiono nei log.
 
-This [Jellyfin](https://github.com/jellyfin) plugin provides notification functionalities via Telegram for various events occurring within your Jellyfin server. Stay informed about playback activities, user management, plugin operations, and more right from your Telegram account. You can personalize the configuration for each user.
+![Pagina delle impostazioni](assets/config.png)
 
-<p align="center">
-<img src="assets/logo.png" alt="Logo" width="300" height="300">
+> [!NOTE]
+> Il plugin usa lo stesso ID dell'originale: installandolo sostituisce Telegram Notifier e ne riprende bot token e chat id.
+> Non tenere entrambi i repository nel catalogo di Jellyfin.
 
-🧰 A troubleshooting guide is available [here](https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier/blob/main/docs/Troubleshooting.md).
+## Requisiti
 
-> [!IMPORTANT]
-> If you encounter a problem, a bug or have an idea for a new feature, submit an issue [here](https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier/issues). Please, submit only one feature or bug per issue.
+- Jellyfin **10.11** o successivo
+- Un bot Telegram e una chat, un gruppo o un canale dove il bot può scrivere
 
-> [!TIP]
-> If you're finding value in this project and it's been helpful to you, consider giving it a star ⭐️ on GitHub ! Your support means a lot and helps others discover the project too.
+## Installazione dal catalogo di Jellyfin (consigliata)
 
-## Table of contents
+1. Apri **Dashboard → Plugin → Catalogo** e clicca l'icona ⚙️ (**Repository**).
+2. Se c'è il repository dell'originale (`RomainPierre7/.../manifest.json`), **rimuovilo**.
+3. Aggiungi un repository:
+   - Nome: `Telegram Notifier (brubo83)`
+   - URL:
+     ```
+     https://raw.githubusercontent.com/brubo83/jellyfin-plugin-TelegramNotifier/main/manifest.json
+     ```
+4. Torna al **Catalogo**, cerca **Telegram Notifier** e clicca **Installa**.
+   Se avevi già l'originale, comparirà come aggiornamento alla versione 13.
+5. **Riavvia Jellyfin.**
 
-- [Install the plugin](#install-the-plugin)
-- [Use the plugin](#use-the-plugin)
-- [Install the project (for developers)](#install-the-project-for-developers)
+Gli aggiornamenti futuri arriveranno dallo stesso catalogo.
 
-## Install the plugin
+## Installazione manuale
 
-To install the plugin on your Jellyfin server, you need to follow these steps:
+1. Scarica `TelegramNotifier.zip` dall'ultima [release](https://github.com/brubo83/jellyfin-plugin-TelegramNotifier/releases).
+2. Ferma Jellyfin.
+3. Se c'è la cartella del plugin originale (`Telegram Notifier_12.x...`), eliminala.
+4. Crea la cartella `TelegramNotifier_13.0.0.0` dentro la cartella `plugins` di Jellyfin ed estraici lo zip:
+   - Docker: `/config/plugins` (o `/config/data/plugins`)
+   - Linux: `/var/lib/jellyfin/plugins`
+   - Windows: `C:\ProgramData\Jellyfin\Server\plugins`
+5. Avvia Jellyfin.
 
-1. Go to the Jellyfin dashboard
-2. Go to the **Plugins** section
-3. Click on the **Manage Repositories** button
-4. Click on **New Repository**
-5. Add the depot URL: 
+## Configurazione
 
-Repository Name: ```Telegram Notifier```
+1. **Crea il bot**: scrivi `/newbot` a [@BotFather](https://t.me/botfather) e copia il token.
+2. **Scegli dove ricevere le notifiche**:
+   - chat privata: scrivi un messaggio al bot;
+   - gruppo: aggiungi il bot al gruppo;
+   - canale: aggiungi il bot come **amministratore** del canale.
+3. **Trova il chat id**: dopo aver scritto nella chat apri
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` e cerca `"chat":{"id": ...}`.
+   Gruppi e canali hanno un id negativo (es. `-1001234567890`); un canale pubblico può usare anche `@nomecanale`.
+4. In Jellyfin apri **Dashboard → Plugin → Telegram Notifier**, inserisci token e chat id e clicca
+   **Invia messaggio di prova**. Il messaggio di prova include la locandina dell'ultimo film o serie aggiunti, così verifichi
+   subito anche le immagini.
+5. Spunta le notifiche che ti interessano nella matrice e clicca **Salva**.
 
-Repository URL:
-```
-https://raw.githubusercontent.com/RomainPierre7/jellyfin-plugin-TelegramNotifier/main/manifest.json
-```
+Note sulla matrice:
 
-6. Go back to the **plugins** page
-7. Search for the plugin: ```Telegram Notifier```
+- Le notifiche causate da un utente (riproduzioni, nuove sessioni, accessi riusciti, modifiche all'utente) si attivano **per utente**.
+- Le notifiche del server (contenuti aggiunti o rimossi, plugin, attività, utente creato o eliminato, accesso fallito) si attivano
+  nella colonna **Server**.
 
-> Make sure to enable the **All** or **Available** filter
+Il **testo dei messaggi** si modifica nella sezione omonima. Sono supportati i tag HTML di Telegram (`<b>`, `<i>`, `<a href>`...)
+e i segnaposto elencati in [docs/DefaultMessages.md](docs/DefaultMessages.md).
 
-<img src="assets/banner.png" alt="Logo" width="267" height="150">
+### Opzioni
 
-8. Click on the **Install** button
-9. Restart the Jellyfin server
+- **Locandina della serie per gli episodi**: usa il poster della serie invece della miniatura dell'episodio.
+- **URL pubblico**: usato solo nel segnaposto `{server.Url}` (es. `https://jellyfin.miodominio.it`).
+- **URL interno di Jellyfin**: di norma va lasciato vuoto. Serve solo come ultima alternativa per le immagini.
+- **Proxy HTTP verso Telegram**: solo se il server non raggiunge direttamente `api.telegram.org`.
 
-> **Note:** You can also install the plugin manually by downloading the latest release from the [releases page](https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier/releases).
+## Risoluzione problemi
 
-## Use the plugin
+- Nei log di Jellyfin (**Dashboard → Log**) cerca `TelegramNotifier`, `sendPhoto` o `sendMessage`: se Telegram rifiuta un
+  messaggio, il motivo è scritto lì.
+- `chat not found`: chat id sbagliato, oppure il bot non è nel gruppo/canale.
+- Non arrivano notifiche di riproduzione: controlla che la casella dell'utente giusto sia spuntata nella matrice.
 
-To use the plugin, you need to follow these steps:
+Altri consigli in [docs/Troubleshooting.md](docs/Troubleshooting.md).
 
-1. Go to the Jellyfin dashboard
-2. Go to the **Plugins** section
-3. Click on the **Telegram Notifier** plugin
-4. Click on **settings**
-5. Configure the plugin
+## Compilare il plugin
 
-### Configuration
+Serve il .NET SDK 9 (o superiore):
 
-1. Select the user you want to configure
-2. Enter the Telegram bot token
-> **Note:** You can create a Telegram bot by sending the command ```/newbot``` to the [BotFather](https://t.me/botfather) and collect the token.
-3. Enter the chat ID
-> **Note:** You can get the collect the chat ID by sending a message to the bot and then go to the URL: ```https://api.telegram.org/bot<YourBOTToken>/getUpdates```
-4. Click on the **Test** button to test the configuration
-5. Enable the notifications for the user
-6. Select the events you want to be notified about
-
-Available events:
-- Item added
-- Item deleted
-- Playback start
-- Playback progress
-- Playback stop
-- Subtitle download failure *(soon...)*
-- Authentication failure *(soon...)*
-- Authentication success *(soon...)*
-- Session start
-- Pending restart *(soon...)*
-- Task completed *(soon...)*
-- Plugin installation cancelled
-- Plugin installation failed
-- Plugin installed
-- Plugin installing
-- Plugin uninstalled
-- Plugin updated
-- User created
-- User deleted
-- User locked out
-- User password changed
-- User updated *(soon...)*
-- User data saved *(soon...)*
-
-7. Click on the **Save** button
-
-**Example of the configuration page:**
-
-![Configuration page exemple](assets/config.png)
-
-## Install the project (for developers)
-
-To install the project, you need to follow these steps:
-
-> **Note:** You need to have the [.NET 9.0 SDK](https://dotnet.microsoft.com/download) installed on your machine.
-
-1. Clone the repository
-2. Install the dependencies
-3. Compile the plugin
-4. Install the plugin
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/RomainPierre7/jellyfin_telegram_notifier.git
+```sh
+dotnet publish Jellyfin.Plugin.TelegramNotifier -c Release -o publish
 ```
 
-### 2. Install the dependencies
+Il file da installare è `publish/Jellyfin.Plugin.TelegramNotifier.dll`.
 
-```bash
-dotnet add package Jellyfin.Controller
-```
+## Crediti
 
-### 3. Compile the plugin
-
-```bash
-dotnet build
-```
-
-or use the **Makefile**:
-
-This command will only build the dll file in the ```plugin``` directory.
-
-```bash
-make dev
-```
-
-Other commands are available in the **Makefile**:
-
-- ```make build``` - Build the project
-- ```make publish``` - Publish the project
-- ```make clean``` - Clean the project
-- ```make dev``` - Build the project and copy the `dll` file in the ```plugin``` directory
-- ```make plugin``` - Publish the project and copy the `dll` file in the ```plugin``` directory
-
-### 4. Install the plugin
-
-To install the plugin, you have to find the Jellyfin plugin directory. It depends on your installation but the most common paths are:
-
-- **Linux**: ```/var/lib/jellyfin/plugins```
-- **Windows**: ```C:\ProgramData\Jellyfin\Server\plugins```
-- **Docker**: ```/config/plugins``` or ```/config/data/plugins```
-
-Then, you have to copy the ```Jellyfin.Plugin.TelegramNotifier.dll``` file in a folder in the plugin directory.
-
-Example:
-
-```
-Plugin
-│
-└── TelegramNotifier
-    │
-    └── Jellyfin.Plugin.TelegramNotifier.dll
-```
-
-Finally, you have to restart the Jellyfin server.
-
-### 5. Tips
-
-If you want to easily test the plugin, you can use the following command to download a video file directly on your server:
-
-```bash
-curl https://cdn.pixabay.com/video/2025/03/28/268290_large.mp4 --output titanic.mp4
-```
+Plugin originale di [RomainPierre7](https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier), licenza [GPL-3.0](LICENSE).

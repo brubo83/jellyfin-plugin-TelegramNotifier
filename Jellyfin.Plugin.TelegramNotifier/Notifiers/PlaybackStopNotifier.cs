@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Globalization;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities.TV;
@@ -58,8 +59,8 @@ public class PlaybackStopNotifier : IEventConsumer<PlaybackStopEventArgs>
                 break;
         } */
 
-        string userId = eventArgs.Users[0].Id.ToString();
+        var userIds = eventArgs.Users.Select(u => NotificationFilter.NormalizeUserId(u.Id)).ToList();
 
-        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStop, eventArgs, userId: userId, subtype: subtype).ConfigureAwait(false);
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStop, eventArgs, userIds: userIds, subtype: subtype).ConfigureAwait(false);
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Events;
@@ -51,18 +52,8 @@ public class PlaybackStartNotifier : IEventConsumer<PlaybackStartEventArgs>
                 break;
         }
 
-        string userId = eventArgs.Users[0].Id.ToString();
+        var userIds = eventArgs.Users.Select(u => NotificationFilter.NormalizeUserId(u.Id)).ToList();
 
-        if (eventArgs.Item.PrimaryImagePath is not null)
-        {
-            string serverUrl = Plugin.Instance?.Configuration.ServerUrl ?? "localhost:8096";
-            string path = "http://" + serverUrl + "/Items/" + eventArgs.Item.Id + "/Images/Primary";
-
-            await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStart, eventArgs, userId: userId, imagePath: path, subtype: subtype).ConfigureAwait(false);
-        }
-        else
-        {
-            await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStart, eventArgs, userId: userId, subtype: subtype).ConfigureAwait(false);
-        }
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStart, eventArgs, userIds: userIds, imageItem: eventArgs.Item, subtype: subtype).ConfigureAwait(false);
     }
 }

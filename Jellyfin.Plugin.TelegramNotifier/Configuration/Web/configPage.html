@@ -1,232 +1,138 @@
 <div id="TelegramNotifierConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
-    data-require="emby-input,emby-button,emby-select,emby-checkbox" data-controller="__plugin/Telegram Notifier.js">
+    data-require="emby-input,emby-button,emby-select,emby-checkbox,emby-textarea" data-controller="__plugin/Telegram Notifier.js">
+    <style>
+        #TelegramNotifierConfigPage .tn-matrix-wrap { overflow-x: auto; margin: 0.5em 0 1em; border: 1px solid rgba(128,128,128,.35); border-radius: 6px; }
+        #TelegramNotifierConfigPage table.tn-matrix { border-collapse: collapse; width: 100%; font-size: .95em; }
+        #TelegramNotifierConfigPage .tn-matrix th, #TelegramNotifierConfigPage .tn-matrix td { padding: .45em .7em; border-bottom: 1px solid rgba(128,128,128,.2); text-align: center; white-space: nowrap; }
+        #TelegramNotifierConfigPage .tn-matrix th:first-child, #TelegramNotifierConfigPage .tn-matrix td:first-child { text-align: left; position: sticky; left: 0; background: var(--tn-bg, #202020); z-index: 1; }
+        #TelegramNotifierConfigPage .tn-matrix thead th { position: sticky; top: 0; background: var(--tn-bg, #202020); z-index: 2; }
+        #TelegramNotifierConfigPage .tn-toggle { cursor: pointer; user-select: none; }
+        #TelegramNotifierConfigPage .tn-toggle:hover { text-decoration: underline; color: #00a4dc; }
+        #TelegramNotifierConfigPage tr.tn-group td { font-weight: bold; text-transform: uppercase; font-size: .8em; letter-spacing: .05em; opacity: .85; padding-top: 1.1em; }
+        #TelegramNotifierConfigPage .tn-na { opacity: .3; }
+        #TelegramNotifierConfigPage .tn-matrix input[type=checkbox] { width: 1.2em; height: 1.2em; cursor: pointer; accent-color: #00a4dc; }
+        #TelegramNotifierConfigPage .tn-serverhead { font-style: italic; }
+        #TelegramNotifierConfigPage textarea.tn-template { width: 100%; min-height: 9em; font-family: monospace; box-sizing: border-box; }
+        #TelegramNotifierConfigPage .tn-row { display: flex; gap: .5em; flex-wrap: wrap; align-items: center; }
+    </style>
     <div data-role="content">
         <div class="content-primary">
             <form id="TelegramNotifierConfigForm">
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label class="emby-checkbox-label">
-                        <input id="EnablePlugin" name="EnablePluginCheckBox" type="checkbox" is="emby-checkbox" />
-                        <span>Enable Plugin</span>
+                        <input id="EnablePlugin" type="checkbox" is="emby-checkbox" />
+                        <span>Abilita notifiche</span>
                     </label>
                 </div>
-                <div class="label">
-                    You can find a guide in the "Use the plugin" section of the README file of the project. A
-                    troubleshooting guide is also available.
-                    <a is="emby-linkbutton" rel="noopener noreferrer"
-                        class="raised button-alt headerHelpButton emby-button" target="_blank"
-                        href="https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier"> README (GitHub) </a>
+
+                <div class="verticalSection">
+                    <h2 class="sectionTitle">Bot e canale Telegram</h2>
+                    <div class="fieldDescription">Un solo bot e una sola chat (canale, gruppo o chat privata) per tutte le notifiche.
+                        In un canale il bot deve essere amministratore.</div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="BotToken">Bot token</label>
+                        <input id="BotToken" type="password" is="emby-input" autocomplete="off" />
+                        <div class="fieldDescription">Il token fornito da @BotFather (es. 123456:ABC-DEF...). Guida: github.com/brubo83/jellyfin-plugin-TelegramNotifier</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ChatId">Chat id</label>
+                        <input id="ChatId" type="text" is="emby-input" />
+                        <div class="fieldDescription">Es. -1001234567890 per un canale/gruppo, oppure @nomecanale per un canale pubblico.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ThreadId">Topic id (facoltativo)</label>
+                        <input id="ThreadId" type="text" is="emby-input" />
+                        <div class="fieldDescription">Solo per i gruppi con argomenti (forum).</div>
+                    </div>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input id="SilentNotification" type="checkbox" is="emby-checkbox" />
+                            <span>Notifiche silenziose</span>
+                        </label>
+                    </div>
+                    <button is="emby-button" type="button" id="TestButton" class="raised button-alt block emby-button">
+                        <span>Invia messaggio di prova (con locandina)</span>
+                    </button>
+                    <div class="fieldDescription" id="TestResult"></div>
                 </div>
-                <br>
-                <div class="label">
-                    If you find value in this project, consider giving it a star ⭐ on GitHub. This helps others to
-                    discover the project too!
-                </div>
-                <div class="label">
-                    You can also support me here! <a is="emby-linkbutton" rel="noopener noreferrer"
-                        class="raised button-alt headerHelpButton emby-button" target="_blank"
-                        href="https://ko-fi.com/B0B8112Y0Y"> Support me </a>
-                </div>
-                <div class="sectionTitleContainer flex align-items-center">
-                    <h2>Configuration</h2>
-                </div>
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ServerUrl">Server URL</label>
-                    <input id="ServerUrl" name="ServerUrl" type="text" is="emby-input" />
-                    <div class="fieldDescription">Insert the url of the jellyfin server (ex: localhost:8096,
-                        192.168.1.2:8096, jellyfin.myDomain.com, ...) </div>
-                    <div class="fieldDescription">Warning: Do not include http/https. This parameter is only used to
-                        find image metadata. If a notification type doesn't work, you can check the
-                        logs to see if the image URL is correct.</div>
-                </div>
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ServerDisplayUrl">Server Display URL
-                        (Optional)</label>
-                    <input id="ServerDisplayUrl" name="ServerDisplayUrl" type="text" is="emby-input" />
-                    <div class="fieldDescription">Insert an alternative server URL to display in notifications (ex:
-                        https://jellyfin.myDomain.com,
-                        https://my-jellyfin.local:8096, ...). If set, this will be used in {server.Url} placeholders
-                        instead of the Server URL above.
-                        You may include the http/https protocol; if omitted, http:// will be automatically added. This
-                        is useful if your server is behind a reverse proxy.
+
+                <div class="verticalSection">
+                    <h2 class="sectionTitle">Quali notifiche inviare</h2>
+                    <div class="fieldDescription">
+                        Clicca il nome di un <b>utente</b> per attivare/disattivare tutta la colonna, il nome di una <b>notifica</b>
+                        per tutta la riga, il nome di un <b>gruppo</b> per tutto il gruppo.
+                        Le notifiche che riguardano un utente (riproduzioni, sessioni, accessi...) si attivano per utente;
+                        quelle del server (aggiunte in libreria, plugin, attività...) si attivano nella colonna <i>Server</i>.
+                    </div>
+                    <div class="tn-matrix-wrap">
+                        <table class="tn-matrix" id="Matrix"></table>
                     </div>
                 </div>
-                <div class="inputContainer">
+
+                <div class="verticalSection">
+                    <h2 class="sectionTitle">Testo dei messaggi</h2>
                     <div class="selectContainer">
-                        <label class="selectLabel" for="userToConfigure">User to configure</label>
-                        <select id="userToConfigure" name="userToConfigure" class="emby-select-withcolor emby-select">
+                        <label class="selectLabel" for="TemplateKey">Notifica</label>
+                        <select id="TemplateKey" is="emby-select" class="emby-select-withcolor emby-select"></select>
+                    </div>
+                    <textarea id="TemplateText" class="tn-template emby-textarea" is="emby-textarea"></textarea>
+                    <div class="tn-row">
+                        <button is="emby-button" type="button" id="TemplateReset" class="raised button-alt emby-button"><span>Ripristina testo predefinito</span></button>
+                        <a is="emby-linkbutton" rel="noopener noreferrer" class="button-link" target="_blank"
+                            href="https://github.com/brubo83/jellyfin-plugin-TelegramNotifier/blob/main/docs/DefaultMessages.md">Segnaposto disponibili</a>
+                    </div>
+                    <div class="fieldDescription">Formato HTML di Telegram (&lt;b&gt;, &lt;i&gt;, &lt;a href&gt;...). I valori dei segnaposto vengono già protetti.</div>
+                </div>
+
+                <div class="verticalSection">
+                    <h2 class="sectionTitle">Opzioni</h2>
+                    <div class="checkboxContainer">
+                        <label class="emby-checkbox-label">
+                            <input id="KeepSerieImage" type="checkbox" is="emby-checkbox" />
+                            <span>Per gli episodi usa la locandina della serie</span>
+                        </label>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ServerDisplayUrl">URL pubblico (per i link nei messaggi)</label>
+                        <input id="ServerDisplayUrl" type="text" is="emby-input" />
+                        <div class="fieldDescription">Es. https://jellyfin.miodominio.it. Usato solo nel segnaposto {server.Url}.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="ServerUrl">URL interno di Jellyfin (facoltativo, avanzato)</label>
+                        <input id="ServerUrl" type="text" is="emby-input" />
+                        <div class="fieldDescription">Di norma lascialo vuoto: le immagini vengono lette direttamente dal disco o dall'indirizzo locale
+                            di Jellyfin, quindi funzionano anche dietro reverse proxy. Serve solo come ultima alternativa (es. http://127.0.0.1:8096).</div>
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="EmptyPlaceholderReplacement">Segnaposto senza valore</label>
+                        <select id="EmptyPlaceholderReplacement" is="emby-select" class="emby-select-withcolor emby-select">
+                            <option value="...">...</option>
+                            <option value="N/A">N/A</option>
+                            <option value="—">—</option>
+                            <option value="">(vuoto)</option>
                         </select>
-                        <div class="fieldDescription">Select the user you want to configure.</div>
                     </div>
-                </div>
-                <div class="sectionTitleContainer flex align-items-center">
-                    <h3>---------- Proxy ----------</h3>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label class="emby-checkbox-label">
-                        <input id="ProxyEnabled" name="ProxyEnabled" type="checkbox" is="emby-checkbox" />
-                        <span>Enable Proxy</span>
-                    </label>
-                    <div class="fieldDescription">
-                        Enable HTTP proxy support for Telegram API requests and image downloads.
-                    </div>
+                    <details>
+                        <summary>Proxy HTTP verso Telegram</summary>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input id="ProxyEnabled" type="checkbox" is="emby-checkbox" />
+                                <span>Usa un proxy HTTP per raggiungere api.telegram.org</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="ProxyHost">Host</label><input id="ProxyHost" type="text" is="emby-input" /></div>
+                        <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="ProxyPort">Porta</label><input id="ProxyPort" type="number" is="emby-input" /></div>
+                        <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="ProxyUsername">Utente</label><input id="ProxyUsername" type="text" is="emby-input" /></div>
+                        <div class="inputContainer"><label class="inputLabel inputLabelUnfocused" for="ProxyPassword">Password</label><input id="ProxyPassword" type="password" is="emby-input" /></div>
+                    </details>
                 </div>
 
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ProxyHost">Proxy Host</label>
-                    <input id="ProxyHost" name="ProxyHost" type="text" is="emby-input" />
-                    <div class="fieldDescription">
-                        The hostname or IP address of the HTTP proxy server (for example: proxy.example.com or
-                        127.0.0.1).
-                    </div>
-                </div>
-
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ProxyPort">Proxy Port</label>
-                    <input id="ProxyPort" name="ProxyPort" type="number" is="emby-input" />
-                    <div class="fieldDescription">
-                        The port number of the proxy server (for example: 8080).
-                    </div>
-                </div>
-
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ProxyUsername">Proxy Username</label>
-                    <input id="ProxyUsername" name="ProxyUsername" type="text" is="emby-input" />
-                    <div class="fieldDescription">
-                        Optional username if your proxy requires authentication.
-                    </div>
-                </div>
-
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ProxyPassword">Proxy Password</label>
-                    <input id="ProxyPassword" name="ProxyPassword" type="password" is="emby-input" />
-                    <div class="fieldDescription">
-                        Optional password if your proxy requires authentication.
-                    </div>
-                </div>
-
-                <div class="fieldDescription">
-                    This proxy configuration supports HTTP/HTTPS proxies only.
-                    If you need to use a SOCKS5 proxy (for example: socks5://127.0.0.1:9050),
-                    you must use a SOCKS5 to HTTP proxy converter such as Privoxy and configure the HTTP proxy address
-                    here.
-                </div>
-                <div class="sectionTitleContainer flex align-items-center">
-                    <h3>---------- Telegram Bot Configuration ----------</h3>
-                </div>
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="BotToken">Bot token</label>
-                    <input id="BotToken" name="BotToken" type="text" is="emby-input" />
-                    <div class="fieldDescription">Insert the telegram bot token here. </div>
-                </div>
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ChatId">Chat ID</label>
-                    <input id="ChatId" name="ChatId" type="text" is="emby-input" />
-                    <div class="fieldDescription"> Insert the telegram chat id here. </div>
-                </div>
-                <div class="inputContainer">
-                    <label class="inputLabel inputLabelUnfocused" for="ThreadId">Thread ID</label>
-                    <input id="ThreadId" name="ThreadId" type="text" is="emby-input" />
-                    <div class="fieldDescription"> Insert the thread id if you use a group using topics/threads.
-                        Otherwise let it blank. </div>
-                </div>
                 <div>
-                    <button id="testButton" is="emby-button" class="raised button block emby-button">
-                        <span>Test bot configuration</span>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Salva</span>
                     </button>
                 </div>
-                <div class="sectionTitleContainer flex align-items-center">
-                    <h3>---------- Notification Configuration ---------- |Save at the end ↓|</h3>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label class="emby-checkbox-label">
-                        <input id="EnableUser" name="EnableUserCheckBox" type="checkbox" is="emby-checkbox" />
-                        <span>Enable notifications for this user</span>
-                    </label>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label class="emby-checkbox-label">
-                        <input id="SilentNotification" name="SilentNotificationCheckBox" type="checkbox"
-                            is="emby-checkbox" />
-                        <span>Silent notifications for this user</span>
-                    </label>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label class="emby-checkbox-label">
-                        <input id="DoNotMentionOwnActivities" name="DoNotMentionOwnActivitiesCheckBox" type="checkbox"
-                            is="emby-checkbox" />
-                        <span>Do not notify user's own activities</span>
-                    </label>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label class="emby-checkbox-label">
-                        <input id="KeepSerieImage" name="KeepSerieImageCheckBox" type="checkbox" is="emby-checkbox" />
-                        <span>Keep series image instead of episode image for episode notifications</span>
-                    </label>
-                </div>
-                <template id="template-notification-type">
-                    <label class="checkboxContainer" style="margin-bottom: 0;">
-                        <input is="emby-checkbox" type="checkbox" data-name="notificationTypeValue" />
-                        <span data-name="notificationTypeName"></span>
-                    </label>
-                    <div>
-                        <button class="edit-template-button raised" is="emby-button"
-                            style="top: 0; margin-bottom: 2em; cursor: pointer;">
-                            <span>Edit template</span>
-                        </button>
-                        <button class="reset-template-button raised" style="display: none;" is="emby-button">
-                            <span>Reset template</span>
-                        </button>
-                        <textarea data-name="txtTemplate"
-                            style="width: 100%; height: 150px; display: none; margin-bottom: 2em;"></textarea>
-                    </div>
-                </template>
-                <template id="template-notification-type-without-textarea">
-                    <label class="checkboxContainer">
-                        <input is="emby-checkbox" type="checkbox" data-name="notificationTypeValue" />
-                        <span data-name="notificationTypeName"></span>
-                    </label>
-                </template>
-                <template id="template-notification-subtype">
-                    <label class="checkboxContainer" style="margin-left: 4em; margin-bottom: 0;">
-                        <input is="emby-checkbox" type="checkbox" data-name="notificationSubtypeValue" />
-                        <span data-name="notificationSubtypeName"></span>
-                    </label>
-                    <div>
-                        <button class="edit-template-button raised" is="emby-button"
-                            style="top: 0; margin-left: 4em; margin-bottom: 2em; cursor: pointer;">
-                            <span>Edit template</span>
-                        </button>
-                        <button class="reset-template-button raised" style="display: none; margin-left: 4em;"
-                            is="emby-button">
-                            <span>Reset template</span>
-                        </button>
-                        <textarea data-name="txtTemplate"
-                            style="width: calc(100% - 4em); height: 150px; display: none; margin-left: 4em; margin-bottom: 2em;"></textarea>
-                    </div>
-                </template>
-                <div>
-                    <div class="sectionTitleContainer flex align-items-center">
-                        <h4>Notification Types</h4>
-                        <a is="emby-linkbutton" rel="noopener noreferrer"
-                            class="raised button-alt headerHelpButton emby-button" target="_blank"
-                            href="https://github.com/RomainPierre7/jellyfin-plugin-TelegramNotifier/blob/main/docs/DefaultMessages.md">
-                            Default message guide </a>
-                    </div>
-                    <div class="label" style="margin-bottom: 2em; margin-top: 1em;">
-                        You can edit messages (personalization, translation, etc.). The important thing is that if you
-                        want to use dynamic data, you must respect the {} placeholders in your personalized message.
-                        To help you, you'll find some examples in the guide above ("Default message guide"):
-                    </div>
-                    <div data-name="notificationTypeContainer">
-                    </div>
-                </div>
-                <div>
-                    <button id="saveButton" is="emby-button" type="submit" class="raised block emby-button">
-                        <span>Save</span>
-                    </button>
-                </div>
+            </form>
         </div>
-        </form>
     </div>
-</div>
 </div>

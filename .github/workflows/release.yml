@@ -1,0 +1,67 @@
+name: Release
+
+# Builds the plugin, publishes TelegramNotifier.zip as a GitHub release and updates manifest.json
+# on main, so Jellyfin's plugin catalog offers the new version.
+#
+# Start it from the Actions tab ("Run workflow", type the version, e.g. 13.0.1.0)
+# or by pushing a tag like 13.0.1.0.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versione (4 numeri, es. 13.0.1.0)"
+        required: true
+      changelog:
+        description: "Novità (facoltativo)"
+        required: false
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version || github.ref_name }}
+      CHANGELOG: ${{ inputs.changelog }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Check version
+        run: |
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' || { echo "Versione non valida: $VERSION"; exit 1; }
+
+      - name: Build
+        run: |
+          dotnet publish Jellyfin.Plugin.TelegramNotifier -c Release -o publish -p:AssemblyVersion="$VERSION" -p:FileVersion="$VERSION"
+          cd publish && zip -X ../TelegramNotifier.zip Jellyfin.Plugin.TelegramNotifier.dll
+
+      - name: Create release
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" TelegramNotifier.zip --clobber
+          else
+            gh release create "$VERSION" TelegramNotifier.zip --target main --title "$VERSION" \
+              --notes "${CHANGELOG:-Vedi i commit per le novità.}"
+          fi
+
+      - name: Update manifest.json
+        run: |
+          python3 .github/scripts/update_manifest.py manifest.json "$VERSION" "$(md5sum TelegramNotifier.zip | cut -d' ' -f1)" \
+            "https://github.com/${{ github.repository }}/releases/download/$VERSION/TelegramNotifier.zip" "$CHANGELOG"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git diff --cached --quiet || { git commit -m "manifest: $VERSION"; git push origin HEAD:main; }

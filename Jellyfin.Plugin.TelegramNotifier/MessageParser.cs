@@ -238,6 +238,14 @@ namespace Jellyfin.Plugin.TelegramNotifier
             return string.Empty;
         }
 
+        private static string EscapeHtml(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("&", "&amp;", StringComparison.Ordinal)
+                .Replace("<", "&lt;", StringComparison.Ordinal)
+                .Replace(">", "&gt;", StringComparison.Ordinal);
+        }
+
         private static string SanitizeString(string s)
         {
             if (string.IsNullOrEmpty(s)) return s;
@@ -617,7 +625,9 @@ namespace Jellyfin.Plugin.TelegramNotifier
             {
                 if (message.Contains(pair.Key))
                 {
-                    var value = string.IsNullOrEmpty(pair.Value) ? emptyReplacement : SanitizeString(pair.Value);
+                    // Values come from metadata (overviews, titles...): escape them, messages use parse_mode=HTML
+                    // and a stray "<" or "&" would make Telegram reject the whole notification.
+                    var value = EscapeHtml(string.IsNullOrEmpty(pair.Value) ? emptyReplacement : SanitizeString(pair.Value));
                     message = message.Replace(pair.Key, value);
                 }
             }
