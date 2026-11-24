@@ -113,6 +113,10 @@ namespace Jellyfin.Plugin.TelegramNotifier
                     { "{item.VideoCodec}", GetItemVideoCodecSafely(effectiveItem) },
                     { "{item.AudioCodec}", GetItemAudioCodecSafely(effectiveItem, mediaSourceManager) },
                     { "{server.Url}", serverUrl },
+                    { "{playback.Client}", GetPropertySafely(objEventArgs, new[] { "ClientName" }) ?? GetPropertySafely(objEventArgs, new[] { "Session", "Client" }) },
+                    { "{playback.Device}", GetPropertySafely(objEventArgs, new[] { "DeviceName" }) },
+                    { "{playback.Method}", GetPlayMethodSafely(objEventArgs) },
+                    { "{playback.Quality}", GetQualitySafely(effectiveItem) },
                     { "{serie.Name}", GetPropertySafely(objEventArgs, SerieNamePath) },
                     { "{season.Series.Name}", GetPropertySafely(objEventArgs, SeasonSeriesNamePath) },
                     { "{episode.Series.Name}", GetPropertySafely(objEventArgs, EpisodeSeriesNamePath) },
@@ -236,6 +240,44 @@ namespace Jellyfin.Plugin.TelegramNotifier
             }
             catch { }
             return string.Empty;
+        }
+
+        private static string GetPlayMethodSafely(object obj)
+        {
+            string? method = GetPropertySafely(obj, new[] { "Session", "PlayState", "PlayMethod" });
+            switch (method)
+            {
+                case "DirectPlay":
+                    return "Direct Play";
+                case "DirectStream":
+                    return "Direct Stream";
+                case "Transcode":
+                    string? height = GetPropertySafely(obj, new[] { "Session", "TranscodingInfo", "Height" });
+                    string? width = GetPropertySafely(obj, new[] { "Session", "TranscodingInfo", "Width" });
+                    string target = QualityLabel(width, height);
+                    return string.IsNullOrEmpty(target) ? "Transcodifica" : "Transcodifica → " + target;
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static string GetQualitySafely(object? item)
+        {
+            if (item == null) return string.Empty;
+            return QualityLabel(GetPropertySafely(item, new[] { "Width" }), GetPropertySafely(item, new[] { "Height" }));
+        }
+
+        // Uses the width too, so a 1920x800 film is "1080p" and not "800p".
+        private static string QualityLabel(string? width, string? height)
+        {
+            int.TryParse(width, out int w);
+            int.TryParse(height, out int h);
+            if (w <= 0 && h <= 0) return string.Empty;
+            if (w >= 3200 || h >= 2000) return "4K";
+            if (w >= 1800 || h >= 1000) return "1080p";
+            if (w >= 1200 || h >= 700) return "720p";
+            if (h > 0) return h.ToString(CultureInfo.InvariantCulture) + "p";
+            return "SD";
         }
 
         private static string EscapeHtml(string s)
@@ -515,35 +557,35 @@ namespace Jellyfin.Plugin.TelegramNotifier
         private static string GetGenresSafely(object obj)
         {
             var item = GetEffectiveItem(obj);
-            if (item == null) return "No genres available";
+            if (item == null) return string.Empty;
             var result = GetItemGenresSafely(item);
-            return string.IsNullOrEmpty(result) ? "No genres available" : result;
+            return string.IsNullOrEmpty(result) ? string.Empty : result;
         }
 
         private static string GetSerieGenresSafely(object obj)
         {
             var itemProperty = obj?.GetType().GetProperty("Item");
-            if (itemProperty == null || itemProperty.GetValue(obj) == null) return "No genres available";
+            if (itemProperty == null || itemProperty.GetValue(obj) == null) return string.Empty;
             var item = itemProperty.GetValue(obj);
             var seriesProperty = item?.GetType().GetProperty("Series");
-            if (seriesProperty == null || seriesProperty.GetValue(item) == null) return "No genres available";
+            if (seriesProperty == null || seriesProperty.GetValue(item) == null) return string.Empty;
             var series = seriesProperty.GetValue(item);
             var genresProperty = series?.GetType().GetProperty("Genres");
-            if (genresProperty == null || genresProperty.GetValue(series) == null) return "No genres available";
+            if (genresProperty == null || genresProperty.GetValue(series) == null) return string.Empty;
             var genresValue = genresProperty.GetValue(series);
             if (genresValue is IEnumerable<object> genres)
                 return string.Join(", ", genres.Select(g => g?.ToString() ?? string.Empty).Where(s => !string.IsNullOrEmpty(s)));
             if (genresValue is System.Collections.IEnumerable enumGenres)
                 return string.Join(", ", enumGenres.Cast<object>().Select(g => g?.ToString() ?? string.Empty).Where(s => !string.IsNullOrEmpty(s)));
-            return "No genres available";
+            return string.Empty;
         }
 
         private static string GetDurationSafely(object obj)
         {
             var item = GetEffectiveItem(obj);
-            if (item == null) return "No duration available";
+            if (item == null) return string.Empty;
             var runTime = GetItemRunTimeSafely(item);
-            return string.IsNullOrEmpty(runTime) ? "No duration available" : runTime;
+            return string.IsNullOrEmpty(runTime) ? string.Empty : runTime;
         }
 
         private static string? GetSeasonNumberSafely(object obj)
@@ -603,14 +645,18 @@ namespace Jellyfin.Plugin.TelegramNotifier
             var replacements = GetReplacements(eventArgs, libraryManager, mediaSourceManager);
             var emptyReplacement = Plugin.Instance?.Configuration?.EmptyPlaceholderReplacement ?? "...";
 
-            message = ConditionalSectionRegex.Replace(message, m =>
+            // Repeat so that nested sections ({?a}..{?b}..{/b}..{/a}) are resolved too.
+            for (int pass = 0; pass < 5 && ConditionalSectionRegex.IsMatch(message); pass++)
             {
-                var placeholderKey = "{" + m.Groups[1].Value + "}";
-                var content = m.Groups[2].Value;
-                if (!replacements.TryGetValue(placeholderKey, out string? value) || string.IsNullOrEmpty(value))
-                    return string.Empty;
-                return content;
-            });
+                message = ConditionalSectionRegex.Replace(message, m =>
+                {
+                    var placeholderKey = "{" + m.Groups[1].Value + "}";
+                    var content = m.Groups[2].Value;
+                    if (!replacements.TryGetValue(placeholderKey, out string? value) || string.IsNullOrEmpty(value))
+                        return string.Empty;
+                    return content;
+                });
+            }
 
             message = OverviewTruncationRegex.Replace(message, m =>
             {

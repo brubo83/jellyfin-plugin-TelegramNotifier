@@ -15,7 +15,16 @@ export default function (view) {
     // ---------- Matrix ----------
 
     // Every checkbox has data-key and data-col ('server' or a user id).
-    const allBoxes = () => Array.from(view.querySelectorAll('#Matrix input[type=checkbox]'));
+    const allBoxes = () => Array.from(view.querySelectorAll('#Matrix input[type=checkbox]:not(.tn-silent)'));
+    const silentBoxes = () => Array.from(view.querySelectorAll('#Matrix input.tn-silent'));
+
+    // Horizontal scrollbar above the matrix, kept in sync with the one below.
+    function syncTopScrollbar() {
+        const top = $('#MatrixScrollTop');
+        const wrap = $('#MatrixWrap');
+        top.firstElementChild.style.width = wrap.scrollWidth + 'px';
+        top.style.display = wrap.scrollWidth > wrap.clientWidth ? '' : 'none';
+    }
 
     // Check all if at least one is unchecked, otherwise uncheck all.
     function toggleBoxes(boxes) {
@@ -56,6 +65,13 @@ export default function (view) {
         corner.addEventListener('click', () => toggleBoxes(allBoxes()));
         headRow.appendChild(corner);
 
+        const silentHead = document.createElement('th');
+        silentHead.textContent = '🔕';
+        silentHead.className = 'tn-toggle tn-silenthead';
+        silentHead.title = 'Silenziosa (senza suono): clic per tutte';
+        silentHead.addEventListener('click', () => toggleBoxes(silentBoxes()));
+        headRow.appendChild(silentHead);
+
         const columns = [{ id: 'server', name: 'Server' }].concat(state.users);
         for (const col of columns) {
             const th = document.createElement('th');
@@ -86,7 +102,7 @@ export default function (view) {
                 });
                 groupRow.appendChild(cell(label));
                 const filler = cell('');
-                filler.colSpan = columns.length;
+                filler.colSpan = columns.length + 1;
                 groupRow.appendChild(filler);
                 tbody.appendChild(groupRow);
             }
@@ -102,6 +118,10 @@ export default function (view) {
             name.addEventListener('click', () => toggleBoxes(allBoxes().filter((b) => b.dataset.key === def.key)));
             tr.appendChild(cell(name));
 
+            const silent = checkbox(def.key, 'silent', rule.Silent ?? def.defaultSilent, def.label + ' – silenziosa');
+            silent.classList.add('tn-silent');
+            tr.appendChild(cell(silent));
+
             if (def.scope === 'server') {
                 tr.appendChild(cell(checkbox(def.key, 'server', rule.Enabled === true, def.label)));
                 state.users.forEach(() => tr.appendChild(cell('–', 'tn-na')));
@@ -114,6 +134,7 @@ export default function (view) {
             tbody.appendChild(tr);
         }
         table.appendChild(tbody);
+        syncTopScrollbar();
     }
 
     // ---------- Message templates ----------
@@ -181,6 +202,7 @@ export default function (view) {
             $('#KeepSerieImage').checked = config.KeepSerieImage;
             $('#ServerDisplayUrl').value = config.ServerDisplayUrl || '';
             $('#ServerUrl').value = config.ServerUrl || '';
+            $('#PlaybackProgressIntervalMinutes').value = config.PlaybackProgressIntervalMinutes || 15;
             $('#EmptyPlaceholderReplacement').value = config.EmptyPlaceholderReplacement ?? '...';
             $('#ProxyEnabled').checked = config.ProxyEnabled;
             $('#ProxyHost').value = config.ProxyHost || '';
@@ -217,6 +239,7 @@ export default function (view) {
             config.KeepSerieImage = $('#KeepSerieImage').checked;
             config.ServerDisplayUrl = $('#ServerDisplayUrl').value.trim();
             config.ServerUrl = $('#ServerUrl').value.trim();
+            config.PlaybackProgressIntervalMinutes = parseInt($('#PlaybackProgressIntervalMinutes').value, 10) || 15;
             config.EmptyPlaceholderReplacement = $('#EmptyPlaceholderReplacement').value;
             config.ProxyEnabled = $('#ProxyEnabled').checked;
             config.ProxyHost = $('#ProxyHost').value.trim();
@@ -231,6 +254,7 @@ export default function (view) {
                 return {
                     Key: def.key,
                     Enabled: mine.some((b) => b.dataset.col === 'server' && b.checked),
+                    Silent: (view.querySelector('#Matrix input.tn-silent[data-key="' + def.key + '"]') || {}).checked === true,
                     UserIds: mine.filter((b) => b.dataset.col !== 'server' && b.checked).map((b) => b.dataset.col),
                     // Store only customised texts, so default messages keep improving with updates.
                     Message: text.trim() === '' || text === def.defaultMessage ? '' : text
@@ -288,6 +312,16 @@ export default function (view) {
             storeCurrentTemplate();
         }
     });
+
+    const scrollTop = $('#MatrixScrollTop');
+    const matrixWrap = $('#MatrixWrap');
+    scrollTop.addEventListener('scroll', () => {
+        if (matrixWrap.scrollLeft !== scrollTop.scrollLeft) matrixWrap.scrollLeft = scrollTop.scrollLeft;
+    });
+    matrixWrap.addEventListener('scroll', () => {
+        if (scrollTop.scrollLeft !== matrixWrap.scrollLeft) scrollTop.scrollLeft = matrixWrap.scrollLeft;
+    });
+    window.addEventListener('resize', syncTopScrollbar);
 
     view.addEventListener('viewshow', load);
 }

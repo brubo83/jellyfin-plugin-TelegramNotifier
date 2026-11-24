@@ -61,6 +61,6 @@ public class PlaybackStopNotifier : IEventConsumer<PlaybackStopEventArgs>
 
         var userIds = eventArgs.Users.Select(u => NotificationFilter.NormalizeUserId(u.Id)).ToList();
 
-        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStop, eventArgs, userIds: userIds, subtype: subtype).ConfigureAwait(false);
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackStop, eventArgs, userIds: userIds, subtype: subtype, linkItem: eventArgs.Item).ConfigureAwait(false);
     }
 }

@@ -5,78 +5,78 @@ namespace Jellyfin.Plugin.TelegramNotifier.Configuration
     /// </summary>
     public static class DefaultMessageConfiguration
     {
-        public static string ItemAddedMovies { get; } = "🎬 {item.Name} ({item.ProductionYear})\n      aggiunto alla libreria";
+        public static string ItemAddedMovies { get; } = "🆕🎬 <b>{item.Name}</b> ({item.ProductionYear})\n<i>Film aggiunto alla libreria</i>{?item.Genres}\n🎭 {item.Genres}{/item.Genres}";
 
-        public static string ItemAddedSeries { get; } = "📺 [Serie] {serie.Name} ({item.ProductionYear}) aggiunta alla libreria";
+        public static string ItemAddedSeries { get; } = "🆕📺 <b>{serie.Name}</b> ({item.ProductionYear})\n<i>Serie aggiunta alla libreria</i>{?item.Genres}\n🎭 {item.Genres}{/item.Genres}";
 
-        public static string ItemAddedSeasons { get; } = "📺 {season.Series.Name} ({item.ProductionYear})\n      Stagione {seasonNumber} aggiunta alla libreria";
+        public static string ItemAddedSeasons { get; } = "🆕📺 <b>{season.Series.Name}</b>\n<i>Stagione {seasonNumber} aggiunta alla libreria</i>";
 
-        public static string ItemAddedEpisodes { get; } = "📺 {episode.Series.Name} ({item.ProductionYear})\n      S{eSeasonNumber} - E{episodeNumber}\n      '{item.Name}' aggiunto alla libreria";
+        public static string ItemAddedEpisodes { get; } = "🆕📺 <b>{episode.Series.Name}</b>\n<i>S{eSeasonNumber}E{episodeNumber} · {item.Name}</i>\nEpisodio aggiunto alla libreria";
 
-        public static string ItemAddedAlbums { get; } = "🎵 [Album] {album.Name} ({item.ProductionYear}) aggiunto alla libreria";
+        public static string ItemAddedAlbums { get; } = "🆕🎵 <b>{album.Name}</b> ({item.ProductionYear})\n<i>Album aggiunto alla libreria</i>";
 
-        public static string ItemAddedSongs { get; } = "🎵 [Audio] {audio.Name} ({item.ProductionYear}) aggiunto alla libreria";
+        public static string ItemAddedSongs { get; } = "🆕🎵 <b>{audio.Name}</b> ({item.ProductionYear})\n<i>Brano aggiunto alla libreria</i>";
 
-        public static string ItemAddedBooks { get; } = "📖 [Libro] {item.Name} aggiunto alla libreria";
+        public static string ItemAddedBooks { get; } = "🆕📖 <b>{item.Name}</b>\n<i>Libro aggiunto alla libreria</i>";
 
-        public static string ItemDeletedMovies { get; } = "🗑️🎬 {item.Name} ({item.ProductionYear})\n      rimosso dalla libreria";
+        public static string ItemDeletedMovies { get; } = "🗑️🎬 <b>{item.Name}</b> ({item.ProductionYear})\n<i>Film rimosso dalla libreria</i>";
 
-        public static string ItemDeletedSeries { get; } = "🗑️📺 [Serie] {serie.Name} ({item.ProductionYear}) rimossa dalla libreria";
+        public static string ItemDeletedSeries { get; } = "🗑️📺 <b>{serie.Name}</b> ({item.ProductionYear})\n<i>Serie rimossa dalla libreria</i>";
 
-        public static string ItemDeletedSeasons { get; } = "🗑️📺 {season.Series.Name} ({item.ProductionYear})\n      Stagione {seasonNumber} rimossa dalla libreria";
+        public static string ItemDeletedSeasons { get; } = "🗑️📺 <b>{season.Series.Name}</b>\n<i>Stagione {seasonNumber} rimossa dalla libreria</i>";
 
-        public static string ItemDeletedEpisodes { get; } = "🗑️📺 {episode.Series.Name} ({item.ProductionYear})\n      S{eSeasonNumber} - E{episodeNumber}\n      '{item.Name}' rimosso dalla libreria";
+        public static string ItemDeletedEpisodes { get; } = "🗑️📺 <b>{episode.Series.Name}</b>\n<i>S{eSeasonNumber}E{episodeNumber} · {item.Name}</i>\nEpisodio rimosso dalla libreria";
 
-        public static string ItemDeletedAlbums { get; } = "🗑️🎵 [Album] {album.Name} ({item.ProductionYear}) rimosso dalla libreria";
+        public static string ItemDeletedAlbums { get; } = "🗑️🎵 <b>{album.Name}</b> ({item.ProductionYear})\n<i>Album rimosso dalla libreria</i>";
 
-        public static string ItemDeletedSongs { get; } = "🗑️🎵 [Audio] {audio.Name} ({item.ProductionYear}) rimosso dalla libreria";
+        public static string ItemDeletedSongs { get; } = "🗑️🎵 <b>{audio.Name}</b> ({item.ProductionYear})\n<i>Brano rimosso dalla libreria</i>";
 
-        public static string ItemDeletedBooks { get; } = "🗑️📖 [Libro] {item.Name} rimosso dalla libreria";
+        public static string ItemDeletedBooks { get; } = "🗑️📖 <b>{item.Name}</b>\n<i>Libro rimosso dalla libreria</i>";
 
-        public static string PlaybackStartMovies { get; } = "👤 {eventArgs.Users[0].Username} sta guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})\n📺 [{eventArgs.Item.MediaType}] {eventArgs.Item.Genres}\n🕒 {duration}";
+        public static string PlaybackStartMovies { get; } = "▶️ <b>{eventArgs.Item.Name}</b> ({eventArgs.Item.ProductionYear})\n👤 {eventArgs.Users[0].Username}\n<i>{playback.Device}{?duration} · {duration}{/duration}{?eventArgs.Item.Genres} · {eventArgs.Item.Genres}{/eventArgs.Item.Genres}</i>{?playback.Method}\n📺 {?playback.Quality}{playback.Quality} · {/playback.Quality}{playback.Method}{/playback.Method}";
 
-        public static string PlaybackStartEpisodes { get; } = "👤 {eventArgs.Users[0].Username} sta guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'\n📺 [{eventArgs.Item.MediaType}] {eventArgs.Item.Genres}\n🕒 {duration}";
+        public static string PlaybackStartEpisodes { get; } = "▶️ <b>{eventArgs.Item.Series.Name}</b>\n<i>S{playbackSeasonNumber}E{playbackEpisodeNumber} · {eventArgs.Item.Name}</i>\n👤 {eventArgs.Users[0].Username}\n<i>{playback.Device}{?duration} · {duration}{/duration}{?eventArgs.Item.Series.Genres} · {eventArgs.Item.Series.Genres}{/eventArgs.Item.Series.Genres}</i>{?playback.Method}\n📺 {?playback.Quality}{playback.Quality} · {/playback.Quality}{playback.Method}{/playback.Method}";
 
-        public static string PlaybackProgressMovies { get; } = "👤 {eventArgs.Users[0].Username} sta ancora guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})";
+        public static string PlaybackProgressMovies { get; } = "⏯️ <b>{eventArgs.Item.Name}</b> ({eventArgs.Item.ProductionYear})\n👤 {eventArgs.Users[0].Username} sta ancora guardando\n<i>{playback.Device}</i>";
 
-        public static string PlaybackProgressEpisodes { get; } = "👤 {eventArgs.Users[0].Username} sta ancora guardando su {eventArgs.DeviceName}:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'";
+        public static string PlaybackProgressEpisodes { get; } = "⏯️ <b>{eventArgs.Item.Series.Name}</b>\n<i>S{playbackSeasonNumber}E{playbackEpisodeNumber} · {eventArgs.Item.Name}</i>\n👤 {eventArgs.Users[0].Username} sta ancora guardando\n<i>{playback.Device}</i>";
 
-        public static string PlaybackStopMovies { get; } = "👤 {eventArgs.Users[0].Username} ha smesso di guardare:\n🎬 {eventArgs.Item.Name} ({eventArgs.Item.ProductionYear})";
+        public static string PlaybackStopMovies { get; } = "⏹️ <b>{eventArgs.Item.Name}</b> ({eventArgs.Item.ProductionYear})\n👤 {eventArgs.Users[0].Username} ha smesso di guardare\n<i>{playback.Device}</i>";
 
-        public static string PlaybackStopEpisodes { get; } = "👤 {eventArgs.Users[0].Username} ha smesso di guardare:\n🎬 {eventArgs.Item.Series.Name} ({eventArgs.Item.ProductionYear})\n      S{playbackSeasonNumber} - E{playbackEpisodeNumber}\n      '{eventArgs.Item.Name}'";
+        public static string PlaybackStopEpisodes { get; } = "⏹️ <b>{eventArgs.Item.Series.Name}</b>\n<i>S{playbackSeasonNumber}E{playbackEpisodeNumber} · {eventArgs.Item.Name}</i>\n👤 {eventArgs.Users[0].Username} ha smesso di guardare\n<i>{playback.Device}</i>";
 
-        public static string SubtitleDownloadFailure { get; } = "🚫 Download dei sottotitoli fallito per {eventArgs.Item.Name}";
+        public static string SubtitleDownloadFailure { get; } = "🚫 <b>Sottotitoli non scaricati</b>\n<i>{eventArgs.Item.Name}</i>";
 
-        public static string AuthenticationFailure { get; } = "🔒 Autenticazione fallita per l'utente {eventArgs.Argument.Username} su {eventArgs.Argument.DeviceName}";
+        public static string AuthenticationFailure { get; } = "🔒 <b>Accesso fallito</b> per {eventArgs.Argument.Username}\n<i>{eventArgs.Argument.DeviceName}</i>";
 
-        public static string AuthenticationSuccess { get; } = "🔓 Autenticazione avvenuta per l'utente {eventArgs.Argument.User.Name} su {eventArgs.Argument.SessionInfo.DeviceName}";
+        public static string AuthenticationSuccess { get; } = "🔓 <b>{eventArgs.Argument.User.Name}</b> ha effettuato l'accesso\n<i>{eventArgs.Argument.SessionInfo.DeviceName}</i>";
 
-        public static string SessionStart { get; } = "👤 {eventArgs.Argument.UserName} ha iniziato una sessione su:\n💻 {eventArgs.Argument.Client} ({eventArgs.Argument.DeviceName})";
+        public static string SessionStart { get; } = "🟢 <b>{eventArgs.Argument.UserName}</b> ha aperto una sessione\n<i>{eventArgs.Argument.Client} · {eventArgs.Argument.DeviceName}</i>";
 
-        public static string PendingRestart { get; } = "🔄 Jellyfin richiede un riavvio.";
+        public static string PendingRestart { get; } = "🔄 <b>Jellyfin richiede un riavvio</b>";
 
-        public static string TaskCompleted { get; } = "🧰 Task {eventArgs.Task.Name} completato: {eventArgs.Task.CurrentProgress}%\n🗒️ ({eventArgs.Task.Category}) {eventArgs.Task.Description}";
+        public static string TaskCompleted { get; } = "🧰 <b>{eventArgs.Task.Name}</b> completato\n<i>{eventArgs.Task.Category}</i>";
 
-        public static string PluginInstallationCancelled { get; } = "🔴 Installazione del plugin {eventArgs.Argument.Name} annullata (versione {eventArgs.Argument.Version})";
+        public static string PluginInstallationCancelled { get; } = "🔴 <b>{eventArgs.Argument.Name}</b>: installazione annullata\n<i>versione {eventArgs.Argument.Version}</i>";
 
-        public static string PluginInstallationFailed { get; } = "🔴 Installazione del plugin {eventArgs.InstallationInfo} fallita (versione {eventArgs.VersionInfo}):\n{eventArgs.Exception}";
+        public static string PluginInstallationFailed { get; } = "🔴 <b>{eventArgs.InstallationInfo}</b>: installazione fallita\n<i>{eventArgs.Exception}</i>";
 
-        public static string PluginInstalled { get; } = "🚧 Plugin {eventArgs.Argument.Name} installato (versione {eventArgs.Argument.Version})";
+        public static string PluginInstalled { get; } = "🧩 <b>{eventArgs.Argument.Name}</b> installato\n<i>versione {eventArgs.Argument.Version}</i>";
 
-        public static string PluginInstalling { get; } = "🚧 Installazione del plugin {eventArgs.Argument.Name} in corso (versione {eventArgs.Argument.Version})";
+        public static string PluginInstalling { get; } = "🧩 <b>{eventArgs.Argument.Name}</b> in installazione\n<i>versione {eventArgs.Argument.Version}</i>";
 
-        public static string PluginUninstalled { get; } = "🚧 Plugin {eventArgs.Argument.Name} disinstallato";
+        public static string PluginUninstalled { get; } = "🧩 <b>{eventArgs.Argument.Name}</b> disinstallato";
 
-        public static string PluginUpdated { get; } = "🚧 {eventArgs.Argument.Name} plugin aggiornato alla versione {eventArgs.Argument.Version}:\n🗒️ {eventArgs.Argument.Changelog}";
+        public static string PluginUpdated { get; } = "🧩 <b>{eventArgs.Argument.Name}</b> aggiornato\n<i>versione {eventArgs.Argument.Version}</i>";
 
-        public static string UserCreated { get; } = "👤 Utente {eventArgs.Argument.Username} creato.";
+        public static string UserCreated { get; } = "👤 <b>{eventArgs.Argument.Username}</b>\n<i>Utente creato</i>";
 
-        public static string UserDeleted { get; } = "🗑️ Utente {eventArgs.Argument.Username} eliminato.";
+        public static string UserDeleted { get; } = "🗑️ <b>{eventArgs.Argument.Username}</b>\n<i>Utente eliminato</i>";
 
-        public static string UserLockedOut { get; } = "👤🔒 Utente {eventArgs.Argument.Username} bloccato";
+        public static string UserLockedOut { get; } = "🔒 <b>{eventArgs.Argument.Username}</b>\n<i>Utente bloccato</i>";
 
-        public static string UserPasswordChanged { get; } = "👤 L'utente {eventArgs.Argument.Username} ha cambiato la propria password.";
+        public static string UserPasswordChanged { get; } = "🔑 <b>{eventArgs.Argument.Username}</b>\n<i>Password cambiata</i>";
 
-        public static string UserUpdated { get; } = "👤 L'utente {eventArgs.Argument.Username} è stato aggiornato";
+        public static string UserUpdated { get; } = "👤 <b>{eventArgs.Argument.Username}</b>\n<i>Utente modificato</i>";
     }
 }

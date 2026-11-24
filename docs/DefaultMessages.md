@@ -7,6 +7,18 @@ This document provides a list of default messages of the plugin. You can use the
 
 ---
 
+## **Segnaposto aggiunti in questo fork** (riproduzione)
+
+| Segnaposto | Esempio |
+|---|---|
+| `{playback.Device}` | Chrome, Samsung TV |
+| `{playback.Client}` | Jellyfin Web, Jellyfin Android |
+| `{playback.Quality}` | 4K, 1080p, 720p |
+| `{playback.Method}` | Direct Play, Direct Stream, Transcodifica → 720p |
+
+Sezioni condizionali: `{?segnaposto}testo{/segnaposto}` mostra `testo` solo se il segnaposto ha un valore (si possono annidare).
+I testi usano l'HTML di Telegram: `<b>grassetto</b>`, `<i>corsivo</i>`, `<a href="...">link</a>`.
+
 ## **Extended Item Placeholders** (Item Added, Item Deleted)
 
 | Placeholder | Description |

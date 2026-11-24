@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -10,6 +11,8 @@ namespace Jellyfin.Plugin.TelegramNotifier.Notifiers;
 
 public class PlaybackProgressNotifier : IEventConsumer<PlaybackProgressEventArgs>
 {
+    // Playback key -> time of the last notification (or of the first progress event seen).
+    private static readonly ConcurrentDictionary<string, DateTime> _lastSent = new();
     private readonly NotificationFilter _notificationFilter;
 
     public PlaybackProgressNotifier(NotificationFilter notificationFilter)
@@ -61,6 +64,44 @@ public class PlaybackProgressNotifier : IEventConsumer<PlaybackProgressEventArgs
 
         var userIds = eventArgs.Users.Select(u => NotificationFilter.NormalizeUserId(u.Id)).ToList();
 
-        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackProgress, eventArgs, userIds: userIds, subtype: subtype).ConfigureAwait(false);
+        // Jellyfin reports progress every ~10 s: only notify once per interval for the same playback,
+        // and not right at the start (that is what PlaybackStart is for).
+        if (!ShouldNotify($"{eventArgs.DeviceId}|{eventArgs.Item.Id:N}|{userIds[0]}"))
+        {
+            return;
+        }
+
+        await _notificationFilter.Filter(NotificationFilter.NotificationType.PlaybackProgress, eventArgs, userIds: userIds, subtype: subtype, linkItem: eventArgs.Item).ConfigureAwait(false);
+    }
+
+    private static bool ShouldNotify(string key)
+    {
+        DateTime now = DateTime.UtcNow;
+        int minutes = Plugin.Config.PlaybackProgressIntervalMinutes;
+        TimeSpan interval = TimeSpan.FromMinutes(minutes > 0 ? minutes : 15);
+
+        // Forget playbacks that stopped long ago.
+        foreach (var entry in _lastSent)
+        {
+            if (now - entry.Value > interval + TimeSpan.FromHours(6))
+            {
+                _lastSent.TryRemove(entry.Key, out _);
+            }
+        }
+
+        if (!_lastSent.TryGetValue(key, out DateTime last) || now - last > interval + interval)
+        {
+            // First progress event of this playback (or after a long pause): start counting from now.
+            _lastSent[key] = now;
+            return false;
+        }
+
+        if (now - last < interval)
+        {
+            return false;
+        }
+
+        _lastSent[key] = now;
+        return true;
     }
 }

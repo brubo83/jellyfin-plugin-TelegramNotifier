@@ -14,6 +14,7 @@ public class PluginConfiguration : BasePluginConfiguration
         ServerUrl = string.Empty;
         ServerDisplayUrl = string.Empty;
         EmptyPlaceholderReplacement = "...";
+        PlaybackProgressIntervalMinutes = 15;
         Rules = Array.Empty<NotificationRule>();
         UserConfigurations = Array.Empty<UserConfiguration>();
     }
@@ -58,6 +59,12 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets the replacement for empty placeholders: "" (blank), "...", "N/A", or "—".
     /// </summary>
     public string EmptyPlaceholderReplacement { get; set; }
+
+    /// <summary>
+    /// Gets or sets how often (minutes) a "still watching" notification may be sent for the same playback.
+    /// Jellyfin reports progress every ~10 seconds; the first message comes after this interval, not at start.
+    /// </summary>
+    public int PlaybackProgressIntervalMinutes { get; set; }
 
     public bool ProxyEnabled { get; set; }
 
