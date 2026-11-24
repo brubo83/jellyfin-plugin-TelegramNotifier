@@ -118,19 +118,19 @@ namespace Jellyfin.Plugin.TelegramNotifier
 
             bool silent = config.SilentNotification || (rule.Silent ?? definition.DefaultSilent);
             var target = new TelegramTarget(config.BotToken, config.ChatId, config.ThreadId, silent);
-            string? buttonUrl = GetItemUrl(linkItem ?? imageItem);
+            var buttons = BuildButtons(linkItem ?? imageItem, _applicationHost.SystemId);
             try
             {
                 if (imageItem is null)
                 {
-                    await _sender.SendMessage(key, message, target, buttonUrl).ConfigureAwait(false);
+                    await _sender.SendMessage(key, message, target, buttons).ConfigureAwait(false);
                     return;
                 }
 
                 ImagePayload? image = await _imageProvider
                     .GetPrimaryImageAsync(ImageProvider.ResolveImageItem(imageItem))
                     .ConfigureAwait(false);
-                await _sender.SendMessageWithPhoto(key, message, image, target, buttonUrl).ConfigureAwait(false);
+                await _sender.SendMessageWithPhoto(key, message, image, target, buttons).ConfigureAwait(false);
             }
 #pragma warning disable CA1031 // A failing notification must never break Jellyfin event handling.
             catch (Exception ex)
@@ -144,7 +144,33 @@ namespace Jellyfin.Plugin.TelegramNotifier
         /// Link to the item in the Jellyfin web client, built from the public URL in the settings
         /// ("URL pubblico"). No public URL, no button.
         /// </summary>
-        private string? GetItemUrl(BaseItem? item) => BuildItemUrl(item, _applicationHost.SystemId);
+        /// <summary>
+        /// "Apri in Jellyfin" (needs the public URL) and "IMDb" (needs an IMDb id) buttons for an item.
+        /// </summary>
+        public static IReadOnlyList<InlineButton> BuildButtons(BaseItem? item, string? serverId)
+        {
+            var buttons = new List<InlineButton>();
+            if (item is null)
+            {
+                return buttons;
+            }
+
+            string? jellyfinUrl = BuildItemUrl(item, serverId);
+            if (jellyfinUrl is not null)
+            {
+                buttons.Add(new InlineButton("▶️ Apri in Jellyfin", jellyfinUrl));
+            }
+
+            if (item.ProviderIds is not null
+                && item.ProviderIds.TryGetValue("Imdb", out string? imdbId)
+                && !string.IsNullOrWhiteSpace(imdbId)
+                && imdbId.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
+            {
+                buttons.Add(new InlineButton("🎬 IMDb", "https://www.imdb.com/title/" + Uri.EscapeDataString(imdbId.Trim()) + "/"));
+            }
+
+            return buttons;
+        }
 
         public static string? BuildItemUrl(BaseItem? item, string? serverId)
         {
